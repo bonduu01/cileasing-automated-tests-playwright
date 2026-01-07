@@ -1,6 +1,6 @@
 import re
 
-from playwright.sync_api import Page, expect, TimeoutError
+from playwright.sync_api import Page, expect
 import os, time
 
 class BasePage:

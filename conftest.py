@@ -6,7 +6,7 @@ from playwright.sync_api import Playwright, Page, Browser, BrowserContext, sync_
 
 @pytest.fixture(scope="session")
 def playwright_instance() -> Generator[Playwright, Any, None]:
-    """Session-scoped Playwright instance ."""
+    """Session-scoped Playwright instance i.e. created once per test run"""
     with sync_playwright() as p:
         yield p
 

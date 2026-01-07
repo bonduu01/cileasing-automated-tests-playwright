@@ -38,6 +38,12 @@ coverage/
 test-results/
 playwright-report/
 playwright/.cache/
+report.html
+allure-results/
+allure-report/
+videos/
+screenshots/
+traces/
 
 # Environment variables
 .env
