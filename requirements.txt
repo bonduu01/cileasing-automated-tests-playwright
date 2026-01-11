@@ -1,0 +1,21 @@
+# Core dependencies
+playwright>=1.40.0
+pytest>=8.0.0
+pytest-playwright>=0.4.4
+
+# Configuration management
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+
+# Optional: Reporting
+pytest-html>=4.1.0
+allure-pytest>=2.13.0
+
+# Optional: Parallel execution
+pytest-xdist>=3.5.0
+
+# Optional: Code quality
+black>=24.0.0
+ruff>=0.1.0
+mypy>=1.8.0
