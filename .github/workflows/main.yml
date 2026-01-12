@@ -6,101 +6,149 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment
 concurrency:
   group: "pages-${{ github.ref }}"
   cancel-in-progress: false
 
 env:
-  PYTHON_VERSION: "3.14"
+  PYTHON_VERSION: "3.12"
   PLAYWRIGHT_BROWSERS_PATH: 0
 
 jobs:
   test:
+    name: Run Playwright Tests
     runs-on: ubuntu-latest
     timeout-minutes: 40
+
     strategy:
       matrix:
         browser: [chromium]
       fail-fast: false
 
     steps:
-      - name: Checkout repository
+      # ============================================
+      # Checkout & Setup
+      # ============================================
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
 
       # ============================================
-      # Environment Variables Setup
+      # Environment Configuration from .env.example
       # ============================================
-      - name: Create .env file from secrets
+      - name: 📋 Verify .env.example exists
         run: |
-          cat > .env << EOF
-          # Application Configuration
-          BASE_URL=${{ secrets.BASE_URL || 'https://thirdparty.sabi.am:8443' }}
-          API_BASE_URL=${{ secrets.API_BASE_URL || 'https://thirdparty.sabi.am:8443' }}
-          
-          # Authentication
-          USERNAME=${{ secrets.TEST_USERNAME || '' }}
-          PASSWORD=${{ secrets.TEST_PASSWORD || '' }}
-          API_KEY=${{ secrets.API_KEY || '' }}
-          API_SECRET=${{ secrets.API_SECRET || '' }}
-          
-          # Test Configuration
-          HEADLESS=${{ secrets.HEADLESS || 'true' }}
-          BROWSER=${{ matrix.browser }}
-          TIMEOUT=${{ secrets.TIMEOUT || '30000' }}
-          SCREENSHOT_ON_FAILURE=${{ secrets.SCREENSHOT_ON_FAILURE || 'true' }}
-          
-          # Environment
-          ENVIRONMENT=${{ secrets.ENVIRONMENT || 'staging' }}
-          CI=true
-          GITHUB_RUN_ID=${{ github.run_id }}
-          GITHUB_RUN_NUMBER=${{ github.run_number }}
-          GITHUB_SHA=${{ github.sha }}
-          
-          # Optional: Database or other service URLs
-          DB_HOST=${{ secrets.DB_HOST || '' }}
-          DB_PORT=${{ secrets.DB_PORT || '' }}
-          DB_NAME=${{ secrets.DB_NAME || '' }}
-          DB_USER=${{ secrets.DB_USER || '' }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD || '' }}
-          
-          # Optional: Third-party services
-          SLACK_WEBHOOK=${{ secrets.SLACK_WEBHOOK || '' }}
-          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN || '' }}
-          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID || '' }}
-          EOF
-          
-          echo "✅ .env file created successfully"
-          echo "📋 Environment variables (masked):"
-          cat .env | grep -v -E "PASSWORD|SECRET|TOKEN|KEY" || true
-
-      - name: Verify .env file
-        run: |
-          if [ -f .env ]; then
-            echo "✅ .env file exists"
-            echo "📊 .env file size: $(wc -c < .env) bytes"
-            echo "📝 Number of variables: $(grep -c "=" .env || echo 0)"
-          else
-            echo "❌ .env file not found!"
+          if [ ! -f .env.example ]; then
+            echo "❌ .env.example file not found in repository root!"
+            echo "Please create .env.example with your configuration"
             exit 1
           fi
+          echo "✅ .env.example found"
+          echo ""
+          echo "📄 Template contents:"
+          cat .env.example
+
+      - name: 🔧 Create .env from .env.example with secrets
+        run: |
+          echo "🔧 Creating .env from .env.example template..."
+          
+          # Copy .env.example as starting point
+          cp .env.example .env
+          
+          # Override with GitHub Secrets if they exist
+          
+          # Application URLs
+          if [ ! -z "${{ secrets.BASE_URL }}" ]; then
+            sed -i "s|^BASE_URL=.*|BASE_URL=${{ secrets.BASE_URL }}|" .env
+            echo "✅ BASE_URL overridden from secret"
+          fi
+          
+          if [ ! -z "${{ secrets.LOGIN_URL }}" ]; then
+            sed -i "s|^LOGIN_URL=.*|LOGIN_URL=${{ secrets.LOGIN_URL }}|" .env
+            echo "✅ LOGIN_URL overridden from secret"
+          fi
+          
+          # Test Credentials
+          if [ ! -z "${{ secrets.TEST_USERNAME }}" ]; then
+            sed -i "s|^TEST_USERNAME=.*|TEST_USERNAME=${{ secrets.TEST_USERNAME }}|" .env
+            echo "✅ TEST_USERNAME overridden from secret"
+          fi
+          
+          if [ ! -z "${{ secrets.TEST_PASSWORD }}" ]; then
+            sed -i "s|^TEST_PASSWORD=.*|TEST_PASSWORD=${{ secrets.TEST_PASSWORD }}|" .env
+            echo "✅ TEST_PASSWORD overridden from secret"
+          fi
+          
+          # Browser Settings - Force CI values
+          sed -i "s|^HEADLESS=.*|HEADLESS=true|" .env
+          sed -i "s|^SLOW_MO=.*|SLOW_MO=0|" .env
+          sed -i "s|^TIMEOUT=.*|TIMEOUT=30000|" .env
+          
+          # Video Recording - Disable in CI for performance
+          sed -i "s|^RECORD_VIDEO=.*|RECORD_VIDEO=false|" .env
+          
+          # Add CI-specific variables
+          echo "" >> .env
+          echo "# CI/CD Variables (Auto-generated)" >> .env
+          echo "CI=true" >> .env
+          echo "BROWSER=${{ matrix.browser }}" >> .env
+          echo "GITHUB_RUN_ID=${{ github.run_id }}" >> .env
+          echo "GITHUB_RUN_NUMBER=${{ github.run_number }}" >> .env
+          echo "GITHUB_SHA=${{ github.sha }}" >> .env
+          echo "GITHUB_REF=${{ github.ref }}" >> .env
+          echo "GITHUB_ACTOR=${{ github.actor }}" >> .env
+          echo "GITHUB_REPOSITORY=${{ github.repository }}" >> .env
+          
+          echo ""
+          echo "✅ .env file created successfully"
+
+      - name: ✅ Verify and display .env configuration
+        run: |
+          if [ ! -f .env ]; then
+            echo "❌ .env file was not created!"
+            exit 1
+          fi
+          
+          echo "✅ .env file exists"
+          echo "📊 File size: $(wc -c < .env) bytes"
+          echo "📝 Total lines: $(wc -l < .env)"
+          echo ""
+          echo "📋 Configuration (sensitive values masked):"
+          echo "================================================"
+          
+          # Show non-sensitive values
+          grep -v -E "PASSWORD|SECRET|TOKEN|KEY" .env | grep -v "^#" | grep -v "^$" || true
+          
+          echo "================================================"
+          echo ""
+          echo "🔒 Sensitive values (masked):"
+          grep -E "PASSWORD|SECRET|TOKEN|KEY" .env | sed 's/=.*/=***MASKED***/g' || echo "None found"
+          echo "================================================"
 
       # ============================================
       # Install Dependencies
       # ============================================
-      - name: Cache Python dependencies
+      - name: 📦 Cache Python dependencies
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
@@ -108,88 +156,84 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install Python dependencies
+      - name: 📦 Install Python dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
-          pip install allure-pytest playwright python-dotenv
+          pip install allure-pytest python-dotenv
+          echo "✅ Python dependencies installed"
 
-      - name: Cache Playwright browsers
+      - name: 🎭 Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('**/requirements.txt') }}
 
-      - name: Install Playwright Chromium
+      - name: 🎭 Install Playwright Chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
           python -m playwright install chromium --with-deps
+          echo "✅ Playwright Chromium installed with dependencies"
+
+      - name: 🎭 Install Playwright system dependencies only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: |
+          python -m playwright install-deps chromium
+          echo "✅ Playwright system dependencies updated"
 
       # ============================================
-      # Install Allure CLI
+      # Install Allure
       # ============================================
-      - name: Cache Allure CLI
+      - name: 📊 Cache Allure CLI
         id: allure-cache
         uses: actions/cache@v4
         with:
           path: /opt/allure
-          key: ${{ runner.os }}-allure-cli
+          key: ${{ runner.os }}-allure-cli-v2
 
-      - name: Install Allure CLI
+      - name: 📊 Install Allure CLI
         if: steps.allure-cache.outputs.cache-hit != 'true'
         run: |
           LATEST_URL=$(curl -s https://api.github.com/repos/allure-framework/allure2/releases/latest \
-            | grep browser_download_url \
-            | grep zip \
-            | cut -d '"' -f 4)
-          echo "📥 Downloading Allure from: $LATEST_URL"
+            | grep browser_download_url | grep zip | cut -d '"' -f 4)
+          echo "📥 Downloading Allure CLI from: $LATEST_URL"
           wget -q $LATEST_URL -O allure.zip
+          
           sudo apt-get update -qq
           sudo apt-get install -y -qq unzip default-jre
+          
           unzip -q allure.zip
           ALLURE_DIR=$(find . -mindepth 1 -maxdepth 1 -type d -name "allure-[0-9]*" | head -n 1)
           sudo mv "$ALLURE_DIR" /opt/allure
           sudo ln -sf /opt/allure/bin/allure /usr/bin/allure
+          
+          echo "✅ Allure CLI installed"
 
-      - name: Verify Allure installation
+      - name: 📊 Verify Allure installation
         run: |
           allure --version
-          echo "✅ Allure CLI installed successfully"
+          which allure
+          echo "✅ Allure CLI is ready"
 
       # ============================================
-      # Load Environment Variables
+      # Prepare Test Environment
       # ============================================
-      - name: Load environment variables
+      - name: 📁 Create test result directories
         run: |
-          set -a
-          source .env
-          set +a
-          echo "✅ Environment variables loaded"
-          echo "🌐 BASE_URL: ${BASE_URL:-not set}"
-          echo "🔧 ENVIRONMENT: ${ENVIRONMENT:-not set}"
-          echo "🎭 BROWSER: ${BROWSER:-not set}"
+          mkdir -p allure-results
+          mkdir -p test-results/screenshots
+          mkdir -p test-results/videos
+          mkdir -p test-results/traces
+          echo "✅ Test directories created"
 
       # ============================================
       # Run Tests
       # ============================================
-      - name: Create results directory
-        run: mkdir -p allure-results
-
-      - name: Run Playwright Page Tests
+      - name: 🧪 Run Playwright Page Tests
         run: |
-          export $(cat .env | xargs)
-          echo "🧪 Running Playwright tests..."
-          
-          test_count=0
-          failed_tests=0
-          
-          for test_file in $(find tests_pages -type f -name "test_*.py" | sort); do
-              test_count=$((test_count + 1))
-              echo "================================================"
-              echo "📝 Test $test_count: $(basename $test_file)"
-              echo "================================================"
-              
-              if pytest "$test_file" \
-                  --browser ${{ matrix.browser }} \
-                  --alluredir=allure-results \
+          echo ""
+          echo "================================================"
+          echo "🧪 Starting Playwright Test Execution"
+          echo "================================================"
+          echo "
