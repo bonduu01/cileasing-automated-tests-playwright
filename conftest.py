@@ -98,9 +98,9 @@ def authenticated_page(page: Page) -> Generator[Page, None, None]:
     Page fixture that is already authenticated.
     Useful for tests that require a logged-in state.
     """
-    home = HomePage(page)
-    home.go_to_home_page()
-    home.login_user()
+    login_page = LoginPage(page)
+    login_page.go_to_login_page()
+    login_page.login_user()
     # Add any post-login waits or verifications here
     yield page
 

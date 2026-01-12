@@ -31,30 +31,54 @@ class TestUserLogins:
         )
         login_page.verify_login_successful_load_companies()
 
+    @pytest.mark.smoke
+    @pytest.mark.login
+    @pytest.mark.regression
+    def test_login_with_wrong_username(self, login_page: LoginPage) -> None:
+        """Verify login with explicitly provided credentials."""
+        login_page.go_to_login_page()
+        login_page.enter_email(settings.test_wrong_username)
+        login_page.enter_password(settings.test_password)
+        login_page.click_login_button()
+        login_page.verify_error_message()
+        login_page.verify_error_toast_visible()
 
+    @pytest.mark.smoke
+    @pytest.mark.login
+    @pytest.mark.regression
+    def test_login_with_wrong_password(self, login_page: LoginPage) -> None:
+        """Verify login with explicitly provided credentials."""
+        login_page.go_to_login_page()
+        login_page.enter_email(settings.test_username)
+        login_page.enter_password(settings.test_wrong_password)
+        login_page.click_login_button()
+        login_page.verify_error_message()
+        login_page.verify_error_toast_visible()
 
-    # @pytest.mark.smoke
-    # @pytest.mark.login
-    # @pytest.mark.regression
-    # def test_login_with_invalid_credentials(self, login_page: LoginPage) -> None:
-    #     """Verify login with explicitly provided credentials."""
-    #     login_page.go_to_login_page()
-    #     login_page.login_user(
-    #         email=settings.test_username,
-    #         password=settings.test_password,
-    #     )
-    #
-    # @pytest.mark.login
-    # def test_login_form_fields_accept_input(self, home_page: HomePage) -> None:
-    #     """Verify form fields accept user input."""
-    #     home_page.go_to_home_page()
-    #     home_page.enter_email("test@example.com")
-    #     home_page.verify_element_has_value(
-    #         'input[name="email"]',
-    #         "test@example.com",
-    #     )
+    @pytest.mark.smoke
+    @pytest.mark.login
+    @pytest.mark.regression
+    def test_login_with_no_password(self, login_page: LoginPage) -> None:
+        """Verify login with explicitly provided credentials."""
+        login_page.go_to_login_page()
+        login_page.enter_email(settings.test_wrong_username)
+        #login_page.enter_password(settings.test_wrong_password)
+        login_page.click_login_button()
+        login_page.verify_password_blank_error()
+        login_page.is_password_blank_error_visible()
 
-
+    @pytest.mark.smoke
+    @pytest.mark.login
+    @pytest.mark.regression
+    def test_login_with_no_username(self, login_page: LoginPage) -> None:
+        """Verify login with explicitly provided credentials."""
+        login_page.go_to_login_page()
+        # login_page.enter_email(settings.test_wrong_username)
+        # login_page.enter_password(settings.test_wrong_password)
+        login_page.click_login_button()
+        login_page.verify_username_blank_error()
+        login_page.is_username_blank_error_visible()
+        login_page.is_password_blank_error_visible()
 # Function-based tests (alternative style)
 
 

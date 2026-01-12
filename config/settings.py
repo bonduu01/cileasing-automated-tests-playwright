@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     # Test Credentials
     test_username: str = ""
     test_password: str = ""
+    test_wrong_username: str = "bonduu001@yahoo.com"
+    test_wrong_password: str = "Bat165474@@"
 
     # Browser Settings
     headless: bool = True

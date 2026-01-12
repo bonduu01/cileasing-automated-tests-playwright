@@ -184,6 +184,33 @@ class BasePage:
         """Assert a checkbox/radio is not checked."""
         expect(self.page.locator(selector)).not_to_be_checked()
 
+    def verify_validation_error(self, error_text: str, timeout: float = 5000) -> None:
+        """Verify validation error message is visible."""
+        error_locator = self.page.get_by_text(error_text, exact=True)
+        expect(error_locator).to_be_visible(timeout=timeout)
+
+    def verify_field_error_by_text(self, error_text: str) -> None:
+        """Verify field validation error by text content."""
+        self.verify_text_visible(error_text)
+
+    def get_validation_error_text(self, selector: str = 'p.text-xs.mt-1') -> str:
+        """Get validation error text from error paragraph."""
+        return self.get_value_from_selector(selector)
+
+    def is_validation_error_visible(self, error_text: str) -> bool:
+        """Check if validation error with specific text is visible."""
+        return self.page.get_by_text(error_text).is_visible()
+
+    def wait_for_validation_error(self, error_text: str, timeout: float = 5000):
+        """Wait for validation error to appear."""
+        error_locator = self.page.get_by_text(error_text)
+        error_locator.wait_for(state="visible", timeout=timeout)
+        return error_locator
+
+    def verify_error_text_color(self, selector: str = 'p.text-\\[red\\]') -> None:
+        """Verify error text has red color class."""
+        self.verify_element_visible(selector)
+
     # --- Waiting ---
 
     def wait_for_selector(

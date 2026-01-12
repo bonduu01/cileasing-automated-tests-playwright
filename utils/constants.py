@@ -21,6 +21,12 @@ class LoginPageSelectors:
     PASSWORD_DISABLED: str = "input[name='password'][type='password']"
     DEFAULT_COMPANY: str = 'div.space-y-4 div.uppercase:text-is("DEFAULT")'
     FLOUR_MILLS_COMPANY: str = 'div.space-y-4 div.uppercase:text-is("FLOUR MILLS NIGERIA LIMITED GOLDEN NOODLES & PASTA IGANMU")'
+    ERROR_TOAST: str = 'div[role="alert"]'
+    PASSWORD_BLANK_ERROR = 'p.text-xs.mt-1:has-text("Password cannot be blank")'
+    VALIDATION_ERROR = 'p.text-xs.mt-1'
+    ERROR_PASSWORD_BLANK = "Password cannot be blank"
+    ERROR_USERNAME_BLANK = "Email cannot be blank"
+    ERROR_INVALID_CREDENTIALS = "Invalid username or password"
 
 
 # Create singleton instances
