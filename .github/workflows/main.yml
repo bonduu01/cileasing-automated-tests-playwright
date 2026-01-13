@@ -140,6 +140,12 @@ jobs:
           pytest tests_pages/ --alluredir=allure-results --verbose || true
           echo "✅ Tests completed"
 
+      - name: Copy .nojekyll to report directory
+        if: always()
+        run: |
+          cp .nojekyll allure-report/.nojekyll
+          echo "✅ Copied .nojekyll to allure-report/"
+
       # ============================================
       # Generate Report
       # ============================================
