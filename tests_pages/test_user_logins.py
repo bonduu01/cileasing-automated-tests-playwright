@@ -9,7 +9,7 @@ from pages import HomePage, LoginPage
 
 
 class TestUserLogins:
-    """Test suite for User Login functionality."""
+    """Test suite for User Login functionalities."""
 
     @pytest.mark.smoke
     @pytest.mark.login
