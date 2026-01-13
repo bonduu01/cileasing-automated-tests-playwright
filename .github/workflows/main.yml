@@ -9,7 +9,7 @@ on:
       - '.gitignore'
       - 'LICENSE'
       - '.github/**'
-#      - '!.github/workflows/main.yaml'
+      - '!.github/workflows/main.yaml'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +19,7 @@ permissions:
 
 # Prevent multiple concurrent deployments and test runs
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: pages-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -325,7 +325,6 @@ jobs:
         if: always()
         run: |
           touch allure-report/.nojekyll
-          cp -rf ./nojekyll allure-report/
           echo "✅ Created .nojekyll file in allure-report/"
 
       - name: 📦 Create Report Archive
@@ -369,6 +368,14 @@ jobs:
       # ============================================
       # Deploy to GitHub Pages
       # ============================================
+      - name: 🔍 Check for existing deployments
+        if: always() && github.ref == 'refs/heads/main'
+        run: |
+          echo "🔍 Checking for duplicate artifacts..."
+          echo "This workflow run: ${{ github.run_id }}"
+          echo "Workflow attempt: ${{ github.run_attempt }}"
+          echo ""
+
       - name: 📄 Verify report before deployment
         if: always() && github.ref == 'refs/heads/main'
         run: |
@@ -403,14 +410,20 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: 📤 Upload artifact to Pages
-        if: always() && github.ref == 'refs/heads/main'
+        if: |
+          always() && 
+          github.ref == 'refs/heads/main' &&
+          github.run_attempt == '1'
         id: upload-pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: './allure-report'
 
       - name: 🚀 Deploy to GitHub Pages
-        if: always() && github.ref == 'refs/heads/main'
+        if: |
+          always() && 
+          github.ref == 'refs/heads/main' &&
+          steps.upload-pages.outcome == 'success'
         id: deployment
         uses: actions/deploy-pages@v4
 
