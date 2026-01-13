@@ -47,7 +47,7 @@ jobs:
 
       - name: 🐍 Setup Python
         if: steps.check-requirements.outputs.exists == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
@@ -225,7 +225,7 @@ jobs:
 
       - name: 🐍 Setup Python
         if: steps.check-files.outputs.has_requirements == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
