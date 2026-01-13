@@ -9,7 +9,7 @@ on:
       - '.gitignore'
       - 'LICENSE'
       - '.github/**'
-      - '!.github/workflows/main.yaml'
+#      - '!.github/workflows/main.yaml'
   workflow_dispatch:
 
 permissions:
