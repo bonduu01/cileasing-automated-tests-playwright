@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ✅ Check if requirements.txt exists
         id: check-requirements
@@ -100,7 +100,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ✅ Check if package.json exists
         id: check-package
@@ -170,7 +170,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🔍 Dependency Review
         uses: actions/dependency-review-action@v4
@@ -185,7 +185,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ✅ Check which files exist
         id: check-files
