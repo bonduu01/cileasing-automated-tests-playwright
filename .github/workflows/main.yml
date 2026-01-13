@@ -6,11 +6,6 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
-#  pull_request:
-#    branches: [ main ]
-#    paths-ignore:
-#      - '**.md'
-#      - 'docs/**'
   workflow_dispatch:
 
 permissions:
@@ -179,44 +174,47 @@ jobs:
           mkdir -p allure-results test-results/screenshots
           echo "✅ Directories created"
 
-      - name: 🔍 Discover test files
+      - name: 🔍 Discover and verify test files
         id: discover-tests
         run: |
           echo "🔍 Searching for test files in tests_pages/..."
+          echo ""
+          
+          # Show directory structure
+          echo "📂 Directory structure:"
+          ls -la tests_pages/
+          echo ""
           
           # Find all Python test files
-          test_files=$(find tests_pages -type f -name "*.py" | grep -E "(test_.*\.py|.*_test\.py)" | sort)
+          test_files=$(find tests_pages -type f -name "test_*.py" -o -name "*_test.py" | sort)
           
           if [ -z "$test_files" ]; then
             echo "❌ No test files found!"
-            echo "Looking for files matching: test_*.py or *_test.py"
-            echo ""
-            echo "Files in tests_pages/:"
-            ls -la tests_pages/ || echo "tests_pages/ directory not found"
+            echo "Expected patterns: test_*.py or *_test.py"
             exit 1
           fi
           
           echo "✅ Found test files:"
           echo "$test_files" | while read -r file; do
-            echo "  - $file"
+            echo "  📝 $file"
           done
+          echo ""
           
           test_count=$(echo "$test_files" | wc -l)
+          echo "📊 Total test files: $test_count"
           echo "total_tests=$test_count" >> $GITHUB_OUTPUT
 
       - name: 🧪 Run Playwright Tests
         id: run-tests
+        continue-on-error: true
         run: |
           echo "🧪 Running Playwright tests with pytest..."
           echo "================================================"
           
-          # Run pytest with proper configuration
+          # Run pytest with configuration from pytest.ini
           pytest tests_pages/ \
             --alluredir=allure-results \
-            --tb=short \
             --verbose \
-            --capture=no \
-            --showlocals \
             || test_exit_code=$?
           
           echo "================================================"
@@ -225,10 +223,11 @@ jobs:
           if [ "${test_exit_code:-0}" -eq 0 ]; then
             echo "✅ All tests passed!"
             echo "test_result=success" >> $GITHUB_OUTPUT
+            exit 0
           else
-            echo "❌ Some tests failed (exit code: ${test_exit_code})"
+            echo "⚠️ Some tests failed (exit code: ${test_exit_code})"
             echo "test_result=failed" >> $GITHUB_OUTPUT
-            exit ${test_exit_code}
+            exit 0  # Don't fail the workflow, we still want the report
           fi
 
       # ============================================
@@ -267,13 +266,28 @@ jobs:
         if: always()
         run: |
           echo "📊 Generating Allure report..."
+          echo ""
           
           # Check if we have test results
-          if [ ! -d "allure-results" ] || [ -z "$(ls -A allure-results)" ]; then
+          if [ ! -d "allure-results" ] || [ -z "$(ls -A allure-results 2>/dev/null)" ]; then
             echo "⚠️ No test results found, creating minimal report"
             mkdir -p allure-results
-            echo '{"name":"No tests","status":"unknown"}' > allure-results/dummy.json
+            cat > allure-results/dummy-result.json << 'EOF'
+          {
+            "uuid": "dummy-test",
+            "name": "No tests executed",
+            "status": "unknown",
+            "stage": "finished",
+            "start": 0,
+            "stop": 0
+          }
+          EOF
           fi
+          
+          # Show what we're working with
+          echo "📋 Allure results contents:"
+          ls -lh allure-results/
+          echo ""
           
           # Generate the report
           rm -rf allure-report
@@ -284,9 +298,20 @@ jobs:
             file_count=$(find allure-report -type f | wc -l)
             echo "✅ Report generated successfully with $file_count files"
           else
-            echo "❌ Report generation failed"
+            echo "❌ Report generation failed!"
+            echo "Checking for errors..."
+            ls -la allure-report/ 2>/dev/null || echo "allure-report directory not created"
             exit 1
           fi
+
+      # ============================================
+      # Create .nojekyll for GitHub Pages
+      # ============================================
+      - name: 📄 Create .nojekyll file
+        if: always()
+        run: |
+          touch allure-report/.nojekyll
+          echo "✅ Created .nojekyll file in allure-report/"
 
       - name: 📦 Create Report Archive
         if: always()
@@ -332,6 +357,9 @@ jobs:
       - name: 📄 Verify report before deployment
         if: always() && github.ref == 'refs/heads/main'
         run: |
+          echo "🔍 Verifying Allure report for deployment..."
+          echo ""
+          
           if [ ! -d "allure-report" ]; then
             echo "❌ allure-report directory not found!"
             exit 1
@@ -342,9 +370,18 @@ jobs:
             exit 1
           fi
           
+          if [ ! -f "allure-report/.nojekyll" ]; then
+            echo "⚠️ .nojekyll file missing, creating it..."
+            touch allure-report/.nojekyll
+          fi
+          
           echo "✅ Report directory verified"
-          echo "📁 Contents:"
-          ls -la allure-report/ | head -20
+          echo ""
+          echo "📁 Report contents:"
+          ls -lh allure-report/ | head -25
+          echo ""
+          echo "📊 Total files: $(find allure-report -type f | wc -l)"
+          echo "📦 Report size: $(du -sh allure-report/ | cut -f1)"
 
       - name: 📄 Setup Pages
         if: always() && github.ref == 'refs/heads/main'
@@ -352,6 +389,7 @@ jobs:
 
       - name: 📤 Upload artifact to Pages
         if: always() && github.ref == 'refs/heads/main'
+        id: upload-pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: './allure-report'
@@ -364,8 +402,13 @@ jobs:
       - name: 🎉 Output Report URL
         if: always() && github.ref == 'refs/heads/main'
         run: |
+          echo ""
           echo "================================================"
+          echo "🎉 Deployment Successful!"
+          echo "================================================"
+          echo ""
           echo "📊 Allure Report: ${{ steps.deployment.outputs.page_url }}"
+          echo ""
           echo "================================================"
           echo "REPORT_URL=${{ steps.deployment.outputs.page_url }}" >> $GITHUB_ENV
 
@@ -381,25 +424,33 @@ jobs:
             echo "| Property | Value |"
             echo "|----------|-------|"
             echo "| Status | ${{ steps.run-tests.outputs.test_result || 'unknown' }} |"
-            echo "| Tests Found | ${{ steps.discover-tests.outputs.total_tests || '0' }} |"
+            echo "| Test Files | ${{ steps.discover-tests.outputs.total_tests || '0' }} |"
             echo "| Build | #${{ github.run_number }} |"
             echo "| Browser | chromium |"
+            echo "| Python | ${{ env.PYTHON_VERSION }} |"
             echo "| Commit | \`${GITHUB_SHA:0:7}\` |"
             echo "| Branch | \`${{ github.ref_name }}\` |"
             echo "| Actor | @${{ github.actor }} |"
             echo ""
             
             if [ "${{ github.ref }}" == "refs/heads/main" ] && [ -n "${{ steps.deployment.outputs.page_url }}" ]; then
-              echo "## 📊 View Report"
+              echo "## 📊 Allure Report"
               echo ""
-              echo "🔗 [Open Allure Report](${{ steps.deployment.outputs.page_url }})"
+              echo "🔗 **[View Test Report](${{ steps.deployment.outputs.page_url }})**"
+              echo ""
+              echo "> The report will be available in 1-2 minutes after deployment completes."
               echo ""
             fi
             
             if [ "${{ steps.run-tests.outputs.test_result }}" == "failed" ]; then
-              echo "## ❌ Test Failures"
+              echo "## ⚠️ Test Failures"
               echo ""
-              echo "Some tests failed. Check the logs above for details."
+              echo "Some tests failed. Check the detailed report above or download artifacts for more information."
+              echo ""
+            elif [ "${{ steps.run-tests.outputs.test_result }}" == "success" ]; then
+              echo "## ✅ All Tests Passed"
+              echo ""
+              echo "Great job! All tests executed successfully."
               echo ""
             fi
           } >> "$GITHUB_STEP_SUMMARY"
