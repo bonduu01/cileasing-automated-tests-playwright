@@ -34,7 +34,6 @@ class TestUserLogins:
         self_service_page = login_page.click_default_company_link()
         self_service_page.verify_self_service_page_loads()
         # Log out user
-        self_service_page.click_on_user_profile()
         self_service_page.click_to_logout()
 
     @pytest.mark.smoke
@@ -85,21 +84,3 @@ class TestUserLogins:
         login_page.verify_username_blank_error()
         login_page.is_username_blank_error_visible()
         login_page.is_password_blank_error_visible()
-
-# Function-based tests (alternative style)
-
-
-# @pytest.mark.smoke
-# def test_home_page_loads(home_page: HomePage) -> None:
-#     """Verify home page loads correctly."""
-#     home_page.go_to_home_page()
-#     home_page.verify_home_page_loads()
-#
-#
-# @pytest.mark.smoke
-# @pytest.mark.login
-# def test_login_page_navigation(home_page: HomePage) -> None:
-#     """Verify login functionality."""
-#     home_page.go_to_home_page()
-#     home_page.verify_home_page_loads()
-#     home_page.login_user()

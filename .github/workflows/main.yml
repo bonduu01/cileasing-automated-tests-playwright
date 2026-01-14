@@ -1,249 +1,249 @@
-name: Playwright Tests with Allure and GitHub Pages Deployment
-
-on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
-      - 'LICENSE'
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Prevent multiple concurrent deployments
-concurrency:
-  group: pages-deployment
-  cancel-in-progress: false
-
-env:
-  PYTHON_VERSION: "3.12"
-  PLAYWRIGHT_BROWSERS_PATH: 0
-
-jobs:
-  test-and-deploy:
-    name: Test and Deploy to GitHub Pages
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    # Skip if commit contains [skip ci]
-    if: |
-      !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[ci skip]')
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      # ============================================
-      # Checkout & Setup
-      # ============================================
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-          cache-dependency-path: requirements.txt
-
-      # ============================================
-      # Environment Configuration
-      # ============================================
-      - name: 🔧 Create .env from .env.example
-        run: |
-          if [ ! -f .env.example ]; then
-            echo "⚠️ .env.example not found, creating minimal .env"
-            cat > .env << EOF
-          BASE_URL=https://example.com
-          HEADLESS=true
-          SLOW_MO=0
-          RECORD_VIDEO=false
-          EOF
-          else
-            cp .env.example .env
-            
-            # Override with secrets if available
-            [ -n "${{ secrets.BASE_URL }}" ] && sed -i "s|^BASE_URL=.*|BASE_URL=${{ secrets.BASE_URL }}|" .env
-            [ -n "${{ secrets.LOGIN_URL }}" ] && sed -i "s|^LOGIN_URL=.*|LOGIN_URL=${{ secrets.LOGIN_URL }}|" .env
-            [ -n "${{ secrets.TEST_USERNAME }}" ] && sed -i "s|^TEST_USERNAME=.*|TEST_USERNAME=${{ secrets.TEST_USERNAME }}|" .env
-            [ -n "${{ secrets.TEST_PASSWORD }}" ] && sed -i "s|^TEST_PASSWORD=.*|TEST_PASSWORD=${{ secrets.TEST_PASSWORD }}|" .env
-            
-            # Force CI settings
-            sed -i "s|^HEADLESS=.*|HEADLESS=true|" .env
-            sed -i "s|^SLOW_MO=.*|SLOW_MO=0|" .env
-            sed -i "s|^RECORD_VIDEO=.*|RECORD_VIDEO=false|" .env
-          fi
-          
-          # Add CI variables
-          cat >> .env << EOF
-          
-          # CI Variables
-          CI=true
-          BROWSER=chromium
-          GITHUB_RUN_ID=${{ github.run_id }}
-          GITHUB_RUN_NUMBER=${{ github.run_number }}
-          GITHUB_SHA=${{ github.sha }}
-          EOF
-          
-          echo "✅ .env configured"
-
-      # ============================================
-      # Install Dependencies
-      # ============================================
-      - name: 📦 Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          echo "✅ Dependencies installed"
-
-      - name: 🎭 Install Playwright
-        run: |
-          python -m playwright install chromium --with-deps
-          echo "✅ Playwright installed"
-
-      # ============================================
-      # Install Allure
-      # ============================================
-      - name: 📊 Install Allure
-        run: |
-          # Install Java (required for Allure)
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq default-jre
-          
-          # Download and install Allure
-          ALLURE_VERSION="2.24.0"
-          wget -q "https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.zip"
-          unzip -q "allure-${ALLURE_VERSION}.zip"
-          sudo mv "allure-${ALLURE_VERSION}" /opt/allure
-          sudo ln -sf /opt/allure/bin/allure /usr/bin/allure
-          
-          allure --version
-          echo "✅ Allure ready"
-
-      # ============================================
-      # Run Tests
-      # ============================================
-      - name: 📁 Create directories
-        run: mkdir -p allure-results test-results/screenshots
-
-      - name: 🧪 Run Tests
-        continue-on-error: true
-        run: |
-          echo "🧪 Running tests..."
-          for test_file in $(find tests_pages -type f -name "test_*.py"); do
-              echo "Running $test_file..."
-              pytest "$test_file" --browser chromium --alluredir=allure-results -v
-          done
-          echo "✅ Tests completed"
-
-      # ============================================
-      # Generate Report
-      # ============================================
-      - name: 📊 Generate Allure Report
-        if: always()
-        run: |
-          # Ensure results directory exists
-          mkdir -p allure-results
-          
-          # Add environment info
-          cat > allure-results/environment.properties << EOF
-          Application=Candi Leasing
-          Base.URL=${{ secrets.BASE_URL }}
-          Browser=chromium
-          Python=${{ env.PYTHON_VERSION }}
-          Build=#${{ github.run_number }}
-          Branch=${{ github.ref_name }}
-          Commit=${{ github.sha }}
-          Timestamp=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          EOF
-          
-          # Generate report
-          allure generate allure-results -o allure-report --clean
-          
-          echo "✅ Report generated: $(find allure-report -type f | wc -l) files"
-
-      - name: 📄 Copy .nojekyll to report directory
-        if: always()
-        run: |
-          if [ -f .nojekyll ]; then
-            cp .nojekyll allure-report/.nojekyll
-            echo "✅ Copied .nojekyll from root to allure-report/"
-          else
-            touch allure-report/.nojekyll
-            echo "⚠️ .nojekyll not found in root, created new one in allure-report/"
-          fi
-          
-          # Verify it was copied
-          if [ -f allure-report/.nojekyll ]; then
-            echo "✅ Verified: .nojekyll exists in allure-report/"
-            ls -la allure-report/ | grep nojekyll
-          else
-            echo "❌ ERROR: .nojekyll still missing in allure-report/"
-            exit 1
-          fi
-
-      # ============================================
-      # Upload Artifacts
-      # ============================================
-      - name: 📤 Upload Artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports-${{ github.run_number }}
-          path: |
-            allure-results/
-            allure-report/
-            test-results/
-          retention-days: 30
-
-      # ============================================
-      # Deploy to GitHub Pages
-      # ============================================
-      - name: 📄 Setup Pages
-        if: github.ref == 'refs/heads/main'
-        uses: actions/configure-pages@v4
-
-      - name: 📤 Upload to Pages
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: allure-report
-
-      - name: 🚀 Deploy to Pages
-        if: github.ref == 'refs/heads/main'
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-      # ============================================
-      # Summary
-      # ============================================
-      - name: 📊 Create Summary
-        if: always()
-        run: |
-          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-          # 🧪 Test Report
-          
-          | Property | Value |
-          |----------|-------|
-          | Build | #${{ github.run_number }} |
-          | Branch | `${{ github.ref_name }}` |
-          | Commit | `${{ github.sha }}` |
-          
-          EOF
-          
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "## 📊 Allure Report" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🔗 **[View Report](${{ steps.deployment.outputs.page_url }})**" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: 🧹 Cleanup
-        if: always()
-        run: rm -f .env
+#name: Playwright Tests with Allure and GitHub Pages Deployment
+#
+#on:
+#  push:
+#    branches: [ main ]
+#    paths-ignore:
+#      - '**.md'
+#      - 'docs/**'
+#      - '.gitignore'
+#      - 'LICENSE'
+#  workflow_dispatch:
+#
+#permissions:
+#  contents: read
+#  pages: write
+#  id-token: write
+#
+## Prevent multiple concurrent deployments
+#concurrency:
+#  group: pages-deployment
+#  cancel-in-progress: false
+#
+#env:
+#  PYTHON_VERSION: "3.12"
+#  PLAYWRIGHT_BROWSERS_PATH: 0
+#
+#jobs:
+#  test-and-deploy:
+#    name: Test and Deploy to GitHub Pages
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 20
+#
+#    # Skip if commit contains [skip ci]
+#    if: |
+#      !contains(github.event.head_commit.message, '[skip ci]') &&
+#      !contains(github.event.head_commit.message, '[ci skip]')
+#
+#    environment:
+#      name: github-pages
+#      url: ${{ steps.deployment.outputs.page_url }}
+#
+#    steps:
+#      # ============================================
+#      # Checkout & Setup
+#      # ============================================
+#      - name: 📥 Checkout repository
+#        uses: actions/checkout@v4
+#
+#      - name: 🐍 Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: ${{ env.PYTHON_VERSION }}
+#          cache: pip
+#          cache-dependency-path: requirements.txt
+#
+#      # ============================================
+#      # Environment Configuration
+#      # ============================================
+#      - name: 🔧 Create .env from .env.example
+#        run: |
+#          if [ ! -f .env.example ]; then
+#            echo "⚠️ .env.example not found, creating minimal .env"
+#            cat > .env << EOF
+#          BASE_URL=https://example.com
+#          HEADLESS=true
+#          SLOW_MO=0
+#          RECORD_VIDEO=false
+#          EOF
+#          else
+#            cp .env.example .env
+#
+#            # Override with secrets if available
+#            [ -n "${{ secrets.BASE_URL }}" ] && sed -i "s|^BASE_URL=.*|BASE_URL=${{ secrets.BASE_URL }}|" .env
+#            [ -n "${{ secrets.LOGIN_URL }}" ] && sed -i "s|^LOGIN_URL=.*|LOGIN_URL=${{ secrets.LOGIN_URL }}|" .env
+#            [ -n "${{ secrets.TEST_USERNAME }}" ] && sed -i "s|^TEST_USERNAME=.*|TEST_USERNAME=${{ secrets.TEST_USERNAME }}|" .env
+#            [ -n "${{ secrets.TEST_PASSWORD }}" ] && sed -i "s|^TEST_PASSWORD=.*|TEST_PASSWORD=${{ secrets.TEST_PASSWORD }}|" .env
+#
+#            # Force CI settings
+#            sed -i "s|^HEADLESS=.*|HEADLESS=true|" .env
+#            sed -i "s|^SLOW_MO=.*|SLOW_MO=0|" .env
+#            sed -i "s|^RECORD_VIDEO=.*|RECORD_VIDEO=false|" .env
+#          fi
+#
+#          # Add CI variables
+#          cat >> .env << EOF
+#
+#          # CI Variables
+#          CI=true
+#          BROWSER=chromium
+#          GITHUB_RUN_ID=${{ github.run_id }}
+#          GITHUB_RUN_NUMBER=${{ github.run_number }}
+#          GITHUB_SHA=${{ github.sha }}
+#          EOF
+#
+#          echo "✅ .env configured"
+#
+#      # ============================================
+#      # Install Dependencies
+#      # ============================================
+#      - name: 📦 Install dependencies
+#        run: |
+#          python -m pip install --upgrade pip
+#          pip install -r requirements.txt
+#          echo "✅ Dependencies installed"
+#
+#      - name: 🎭 Install Playwright
+#        run: |
+#          python -m playwright install chromium --with-deps
+#          echo "✅ Playwright installed"
+#
+#      # ============================================
+#      # Install Allure
+#      # ============================================
+#      - name: 📊 Install Allure
+#        run: |
+#          # Install Java (required for Allure)
+#          sudo apt-get update -qq
+#          sudo apt-get install -y -qq default-jre
+#
+#          # Download and install Allure
+#          ALLURE_VERSION="2.24.0"
+#          wget -q "https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.zip"
+#          unzip -q "allure-${ALLURE_VERSION}.zip"
+#          sudo mv "allure-${ALLURE_VERSION}" /opt/allure
+#          sudo ln -sf /opt/allure/bin/allure /usr/bin/allure
+#
+#          allure --version
+#          echo "✅ Allure ready"
+#
+#      # ============================================
+#      # Run Tests
+#      # ============================================
+#      - name: 📁 Create directories
+#        run: mkdir -p allure-results test-results/screenshots
+#
+#      - name: 🧪 Run Tests
+#        continue-on-error: true
+#        run: |
+#          echo "🧪 Running tests..."
+#          for test_file in $(find tests_pages -type f -name "test_*.py"); do
+#              echo "Running $test_file..."
+#              pytest "$test_file" --browser chromium --alluredir=allure-results -v
+#          done
+#          echo "✅ Tests completed"
+#
+#      # ============================================
+#      # Generate Report
+#      # ============================================
+#      - name: 📊 Generate Allure Report
+#        if: always()
+#        run: |
+#          # Ensure results directory exists
+#          mkdir -p allure-results
+#
+#          # Add environment info
+#          cat > allure-results/environment.properties << EOF
+#          Application=Candi Leasing
+#          Base.URL=${{ secrets.BASE_URL }}
+#          Browser=chromium
+#          Python=${{ env.PYTHON_VERSION }}
+#          Build=#${{ github.run_number }}
+#          Branch=${{ github.ref_name }}
+#          Commit=${{ github.sha }}
+#          Timestamp=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+#          EOF
+#
+#          # Generate report
+#          allure generate allure-results -o allure-report --clean
+#
+#          echo "✅ Report generated: $(find allure-report -type f | wc -l) files"
+#
+#      - name: 📄 Copy .nojekyll to report directory
+#        if: always()
+#        run: |
+#          if [ -f .nojekyll ]; then
+#            cp .nojekyll allure-report/.nojekyll
+#            echo "✅ Copied .nojekyll from root to allure-report/"
+#          else
+#            touch allure-report/.nojekyll
+#            echo "⚠️ .nojekyll not found in root, created new one in allure-report/"
+#          fi
+#
+#          # Verify it was copied
+#          if [ -f allure-report/.nojekyll ]; then
+#            echo "✅ Verified: .nojekyll exists in allure-report/"
+#            ls -la allure-report/ | grep nojekyll
+#          else
+#            echo "❌ ERROR: .nojekyll still missing in allure-report/"
+#            exit 1
+#          fi
+#
+#      # ============================================
+#      # Upload Artifacts
+#      # ============================================
+#      - name: 📤 Upload Artifacts
+#        if: always()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: test-reports-${{ github.run_number }}
+#          path: |
+#            allure-results/
+#            allure-report/
+#            test-results/
+#          retention-days: 30
+#
+#      # ============================================
+#      # Deploy to GitHub Pages
+#      # ============================================
+#      - name: 📄 Setup Pages
+#        if: github.ref == 'refs/heads/main'
+#        uses: actions/configure-pages@v4
+#
+#      - name: 📤 Upload to Pages
+#        if: github.ref == 'refs/heads/main'
+#        uses: actions/upload-pages-artifact@v3
+#        with:
+#          path: allure-report
+#
+#      - name: 🚀 Deploy to Pages
+#        if: github.ref == 'refs/heads/main'
+#        id: deployment
+#        uses: actions/deploy-pages@v4
+#
+#      # ============================================
+#      # Summary
+#      # ============================================
+#      - name: 📊 Create Summary
+#        if: always()
+#        run: |
+#          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+#          # 🧪 Test Report
+#
+#          | Property | Value |
+#          |----------|-------|
+#          | Build | #${{ github.run_number }} |
+#          | Branch | `${{ github.ref_name }}` |
+#          | Commit | `${{ github.sha }}` |
+#
+#          EOF
+#
+#          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+#            echo "## 📊 Allure Report" >> $GITHUB_STEP_SUMMARY
+#            echo "" >> $GITHUB_STEP_SUMMARY
+#            echo "🔗 **[View Report](${{ steps.deployment.outputs.page_url }})**" >> $GITHUB_STEP_SUMMARY
+#          fi
+#
+#      - name: 🧹 Cleanup
+#        if: always()
+#        run: rm -f .env
