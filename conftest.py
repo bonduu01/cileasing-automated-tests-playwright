@@ -88,10 +88,16 @@ def login_page(page: Page) -> LoginPage:
     """LoginPage fixture."""
     return LoginPage(page)
 
+
+# @pytest.fixture
+# def self_service_page(page: Page) -> SelfServicePage:
+#     """Self Service Page fixture."""
+#     return SelfServicePage(page)
+
 @pytest.fixture
-def self_service_page(page: Page) -> SelfServicePage:
-    """Self Service Page fixture."""
-    return SelfServicePage(page)
+def self_service_page(authenticated_page: Page) -> SelfServicePage:
+    return SelfServicePage(authenticated_page)
+
 
 # --- Utility Fixtures ---
 
@@ -105,7 +111,21 @@ def authenticated_page(page: Page) -> Generator[Page, None, None]:
     login_page = LoginPage(page)
     login_page.go_to_login_page()
     login_page.login_user()
-    # Add any post-login waits or verifications here
+    login_page.verify_login_successful_load_companies()
+    # Displays the Default Company
+    self_service_page = login_page.click_default_company_link()
+    self_service_page.verify_self_service_page_loads()
+
+    yield page
+
+
+@pytest.fixture
+def logout_page(page: Page) -> Generator[Page, None, None]:
+    """ Log out users"""
+    self_service_page = SelfServicePage(page)
+    self_service_page.click_on_user_profile()
+    self_service_page.verify_self_service_page_loads()
+
     yield page
 
 

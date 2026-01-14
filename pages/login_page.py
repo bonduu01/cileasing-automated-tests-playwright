@@ -35,7 +35,6 @@ class LoginPage(BasePage):
         self.fill_input(LOGIN_PAGE.EMAIL_INPUT, email)
         self.fill_input(LOGIN_PAGE.PASSWORD_INPUT, password)
         self.click_element(LOGIN_PAGE.SUBMIT_BUTTON)
-        self.wait(5000)
 
     def enter_email(self, email: str) -> None:
         """Enter email address."""

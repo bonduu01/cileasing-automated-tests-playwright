@@ -32,7 +32,10 @@ class TestUserLogins:
         login_page.verify_login_successful_load_companies()
         # Displays the Default Company
         self_service_page = login_page.click_default_company_link()
-        self_service_page.wait(5000)
+        self_service_page.verify_self_service_page_loads()
+        # Log out user
+        self_service_page.click_on_user_profile()
+        self_service_page.click_to_logout()
 
     @pytest.mark.smoke
     @pytest.mark.login
@@ -82,6 +85,7 @@ class TestUserLogins:
         login_page.verify_username_blank_error()
         login_page.is_username_blank_error_visible()
         login_page.is_password_blank_error_visible()
+
 # Function-based tests (alternative style)
 
 

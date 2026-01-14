@@ -30,6 +30,14 @@ class LoginPageSelectors:
     DEFAULT_LINK: str = 'text="DEFAULT"'
 
 
+@dataclass(frozen=True)
+class SelfServicePageSelectors:
+    """Selectors for the Self-Service Page."""
+    PERSONAL_NAME: str = "span.text-dark0b.font-\\[400\\].text-\\[14px\\]"
+    MM_PROFILE: str = "span.ant-avatar-string:has-text('MM')"
+    LOGOUT_LINK: str = "p.text-danger:has-text('Logout')"
+
 # Create singleton instances
 HOME_PAGE = HomePageSelectors()
 LOGIN_PAGE = LoginPageSelectors()
+SELF_SERVICE_PAGE = SelfServicePageSelectors()
