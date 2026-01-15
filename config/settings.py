@@ -21,12 +21,16 @@ class Settings(BaseSettings):
     base_url: str = "https://candileasing.netlify.app/"
     login_url: str = "https://candileasing.netlify.app/"
     self_service_url: str = "https://candileasing.netlify.app/personal/self-service"
+    edit_self_service_url: str = "https://candileasing.netlify.app/personal/self-service/personal-data/edit"
 
     # Test Credentials
     test_username: str = ""
     test_password: str = ""
     test_wrong_username: str = "bonduu001@yahoo.com"
     test_wrong_password: str = "Bat165474@@"
+    test_other_name: str = "Adams"
+    test_job_title: str = "Head Of Department"
+
 
     # Browser Settings
     headless: bool = True

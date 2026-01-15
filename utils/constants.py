@@ -37,8 +37,21 @@ class SelfServicePageSelectors:
     MM_PROFILE: str = "span.ant-avatar-string:has-text('MM')"
     LOGOUT_LINK: str = "p.text-danger:has-text('Logout')"
     EDIT_LINK: str = "div.flex.items-center:has-text('Edit')"
+    OTHER_NAME: str = "input[name='otherName']"
+    JOB_TITLE: str = 'input[name="jobTitle"]'
+    EDIT_SUBMIT_BUTTON: str = "button:has-text('Submit')"
+
+
+@dataclass(frozen=True)
+class EditSelfServicePageSelectors:
+    """Selectors for the Edit Personnel Self-Service Page."""
+    OTHER_NAME: str = "input[name='otherName']"
+    JOB_TITLE: str = 'input[name="jobTitle"]'
+    EDIT_SUBMIT_BUTTON: str = "button:has-text('Submit')"
+
 
 # Create singleton instances
 HOME_PAGE = HomePageSelectors()
 LOGIN_PAGE = LoginPageSelectors()
 SELF_SERVICE_PAGE = SelfServicePageSelectors()
+EDIT_SELF_SERVICE_PAGE = EditSelfServicePageSelectors()
