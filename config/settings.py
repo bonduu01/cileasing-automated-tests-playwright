@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     test_wrong_password: str = "Bat165474@@"
     test_other_name: str = "OLADEJO"
     test_job_title: str = "HEAD OF IT"
+    bank_name: str = "GLOBUS"
+    bank_id: str = "UNAFNGLA228"
+    sort_code: str = "033"
 
 
     # Browser Settings

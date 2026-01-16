@@ -95,6 +95,11 @@ def browser(playwright_instance: Playwright) -> Generator[Browser, None, None]:
         slow_mo=settings.slow_mo,
     )
 
+    # browser = playwright_instance.webkit.launch(
+    #     headless=settings.headless,
+    #     slow_mo=settings.slow_mo,
+    # )
+
     logger.info(f"   ✅ Browser launched: {browser.browser_type.name}")
 
     yield browser

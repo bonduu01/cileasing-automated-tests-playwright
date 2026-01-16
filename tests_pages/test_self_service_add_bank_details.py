@@ -60,8 +60,9 @@ class TestAddBankDetailsPage:
             logger.info(f"🔍 Add Bank Button text: {add_bank_detail_module_link.text_content()}")
 
         # Click to add
-        self.add_bank_details_page = self.self_service_page.click_to_add_banking_details()
+        add_bank_details_page = self.self_service_page.click_to_add_banking_details()
 
         # Debug: Check navigation happened
         logger.info(f"📍 After click URL: {self.page.url}")
-        self.add_bank_details_page.create_new_bank_details()
+        add_bank_details_page.create_new_bank_details()
+        logger.info("✅ Add bank details created successful")
