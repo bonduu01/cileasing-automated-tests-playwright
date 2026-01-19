@@ -26,6 +26,14 @@ class AddBankDetailsPage(BasePage):
         sort_code = sort_code or settings.sort_code
 
         logger.info(f"🔐 Attempting to create bank details using: {bank_name}, {bank_id} and {sort_code}")
-        self.select_dropdown_option(ADD_BANK_DETAILS_PAGE.BANK_NAME_DROPDOWN, ADD_BANK_DETAILS_PAGE.BANK_NAME)
-        logger.info(f"✅ Droplist selected {ADD_BANK_DETAILS_PAGE.BANK_NAME}")
-        self.wait(3000)
+
+        self.ant_select_option(
+            ADD_BANK_DETAILS_PAGE.BANK_NAME_DROPDOWN,
+            ADD_BANK_DETAILS_PAGE.BANK_NAME
+        )
+        logger.info(f"✅ Selected {ADD_BANK_DETAILS_PAGE.BANK_NAME} from dropdown")
+        self.fill_input(ADD_BANK_DETAILS_PAGE.BANK_ID, bank_id)
+        self.verify_element_has_value(ADD_BANK_DETAILS_PAGE.BANK_ID, bank_id)
+        logger.info(f"✅ Financial ID: {bank_id} added and verified")
+        self.click_element(ADD_BANK_DETAILS_PAGE.ADD_BANK_BUTTON)
+        logger.info(f"✅ CLick to submit")

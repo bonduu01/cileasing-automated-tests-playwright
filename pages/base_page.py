@@ -156,6 +156,58 @@ class BasePage:
             return locator.select_option(label=label)
         return locator.select_option(value=value)
 
+    # base_page.py
+
+    # base_page.py
+
+    def ant_select_option(self, dropdown_locator: str, option_text: str):
+        """
+        Ant Design Select handler - for custom div-based dropdowns.
+        Do NOT use for native <select> elements.
+        """
+
+        # 1. Wait for loading to finish
+        logger.info(f"📋 Waiting for dropdown to finish loading...")
+        loading_dropdown = self.page.locator(".ant-select-loading")
+        try:
+            loading_dropdown.wait_for(state="hidden", timeout=15_000)
+            logger.info("✅ Dropdown finished loading")
+        except:
+            logger.info("ℹ️ No loading state detected")
+
+        # 2. Click to open dropdown
+        logger.info(f"📋 Opening dropdown: {dropdown_locator}")
+        self.page.locator(dropdown_locator).click()
+
+        # 3. Wait for dropdown panel
+        dropdown = self.page.locator(
+            ".ant-select-dropdown:not(.ant-select-dropdown-hidden)"
+        )
+        dropdown.wait_for(state="visible", timeout=10_000)
+        logger.info("✅ Dropdown panel visible")
+
+        # 4. Find and click option
+        option = dropdown.locator(f".ant-select-item-option[title='{option_text}']")
+
+        if option.count() > 0 and option.is_visible():
+            option.click()
+            logger.info(f"✅ Selected: {option_text}")
+            dropdown.wait_for(state="hidden", timeout=5_000)
+            return
+
+        # 5. Scroll to find option in virtual list
+        virtual_list = dropdown.locator(".rc-virtual-list-holder")
+        for attempt in range(30):
+            if option.count() > 0 and option.is_visible():
+                option.click()
+                logger.info(f"✅ Selected: {option_text} (after {attempt} scrolls)")
+                dropdown.wait_for(state="hidden", timeout=5_000)
+                return
+            virtual_list.evaluate("el => el.scrollTop += 150")
+            self.page.wait_for_timeout(100)
+
+        raise Exception(f"Option '{option_text}' not found after scrolling")
+
     def upload_file(self, selector: str, file_path: str | list[str]) -> None:
         """Upload file(s) to a file input."""
         logger.info(f"📤 Uploading file: {file_path} to {selector}")

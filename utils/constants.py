@@ -54,8 +54,10 @@ class EditSelfServicePageSelectors:
 @dataclass(frozen=True)
 class AddBankDetailsPageSelectors:
     """Selectors for the Add bank Details Self-Service Page."""
-    BANK_NAME_DROPDOWN: str = ".ant-select-item.ant-select-item-option[title='GLOBUS BANK']"
-    BANK_NAME: str = 'GLOBUS BANK'
+    BANK_NAME_DROPDOWN = ".ant-select-selector"
+    BANK_NAME: str = "GLOBUS BANK"
+    BANK_ID: str = 'input[name="financialInstitutionId"]'  # Also known as financial institution id
+    ADD_BANK_BUTTON: str = "button:has-text('Add Bank')"
 
 
 

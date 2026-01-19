@@ -17,22 +17,17 @@ from config import settings
 from pages import HomePage, LoginPage, SelfServicePage
 
 # Create necessary directories
-os.makedirs("logs", exist_ok=True)
 os.makedirs("screenshots", exist_ok=True)
 
 
 def setup_logging():
-    """Configure comprehensive logging for all tests."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file = f"logs/test_run_{timestamp}.log"
-
-    # Configure root logger
+    """Configure console logging for all tests."""
+    # Configure root logger with console output only
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s | %(levelname)-8s | %(name)-30s | %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
         handlers=[
-            logging.FileHandler(log_file, mode='w', encoding='utf-8'),
             logging.StreamHandler(sys.stdout)
         ]
     )
@@ -43,26 +38,22 @@ def setup_logging():
     logger = logging.getLogger(__name__)
     logger.info(f"{'=' * 80}")
     logger.info(f"🚀 TEST RUN STARTED")
-    logger.info(f"   📁 Log file: {log_file}")
     logger.info(f"   📸 Screenshots: screenshots/")
     logger.info(f"   🎥 Videos: {settings.video_dir if settings.record_video else 'disabled'}")
     logger.info(f"   🌐 Headless: {settings.headless}")
     logger.info(f"   ⏱️  Timeout: {settings.timeout}ms")
     logger.info(f"{'=' * 80}\n")
 
-    return log_file
-
 
 @pytest.fixture(scope="session", autouse=True)
 def configure_logging():
     """Auto-configure logging for all tests."""
-    log_file = setup_logging()
+    setup_logging()
     yield
 
     logger = logging.getLogger(__name__)
     logger.info(f"\n{'=' * 80}")
     logger.info(f"✅ TEST RUN COMPLETED")
-    logger.info(f"   📁 Log file: {log_file}")
     logger.info(f"{'=' * 80}")
 
 
