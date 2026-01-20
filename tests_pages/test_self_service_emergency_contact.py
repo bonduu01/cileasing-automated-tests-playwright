@@ -18,7 +18,6 @@ class TestEmergencyContactPage:
         logger.info(f"\n{'#' * 80}")
         logger.info(f"🧪 STARTING TEST: {test_name}")
         logger.info(f"{'#' * 80}\n")
-
         yield
 
         logger.info(f"\n{'#' * 80}")
