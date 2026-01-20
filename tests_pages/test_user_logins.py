@@ -43,7 +43,7 @@ class TestUserLogins:
     @pytest.mark.regression
     def test_login_with_valid_credentials_with_pom(self, login_page: LoginPage) -> None:
         """Verify successful login with valid credentials using POM."""
-        logger.info("📋 Test Vlaid Credentials")
+        logger.info("📋 Test Valid Credentials")
         logger.info("📋 Step 1: Navigate to login page")
         login_page.go_to_login_page()
 

@@ -5,6 +5,7 @@ Home Page Object for the CAndILeasing application.
 from playwright.sync_api import Page, expect
 
 from pages.add_bank_details_page import AddBankDetailsPage
+from pages.add_emergency_contact_page import AddEmergencyContactPage
 from pages.edit_bank_details_page import EditBankDetailsPage
 from pages.edit_self_service_page import EditSelfServicePage
 from pages.home_page import HomePage
@@ -194,6 +195,10 @@ class SelfServicePage(BasePage):
         return EditBankDetailsPage(self.page)
 
     @log_method
-    def click_emergency_contacts_button(self):
+    def click_to_add_emergency_contacts_details(self) -> AddEmergencyContactPage:
         logger.info("🖱️ Click Emergency Contacts button")
         self.click_element(SELF_SERVICE_PAGE.EMERGENCY_CONTACTS_BUTTON)
+
+        logger.info("✅ Click to Add Emergency Contacts details")
+        self.click_element(SELF_SERVICE_PAGE.EMERGENCY_CONTACTS_ADD_BUTTON)
+        return AddEmergencyContactPage(self.page)

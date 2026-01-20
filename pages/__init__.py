@@ -1,5 +1,6 @@
 """Page Objects module."""
 from pages.add_bank_details_page import AddBankDetailsPage
+from pages.add_emergency_contact_page import AddEmergencyContactPage
 from pages.base_page import BasePage
 from pages.edit_bank_details_page import EditBankDetailsPage
 from pages.edit_self_service_page import EditSelfServicePage
@@ -8,4 +9,4 @@ from pages.login_page import LoginPage
 from pages.self_service_page import SelfServicePage
 
 __all__ = ["BasePage", "HomePage", "LoginPage", "SelfServicePage", "EditSelfServicePage", "AddBankDetailsPage",
-           "EditBankDetailsPage"]
+           "EditBankDetailsPage", "AddEmergencyContactPage"]

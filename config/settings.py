@@ -35,10 +35,19 @@ class Settings(BaseSettings):
     bank_name: str = "GLOBUS BANK"
     bank_id: str = "UNAFNGLA228"
     sort_code: str = "033"
-
+    first_name: str = ""
+    other_name: str = ""
+    surname: str = ""
+    maiden_name: str = ""
+    previous_name: str = ""
+    mobile_number: str = ""
+    work_number: str = ""
+    relationship: str = ""
+    email: str = ""
+    location: str = ""
 
     # Browser Settings
-    headless: bool = True
+    headless: bool = False
     slow_mo: int = 0
     timeout: int = 30000
 

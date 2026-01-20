@@ -35,9 +35,8 @@ class TestEmergencyContactPage:
         # Cleanup if needed
 
     @pytest.mark.regression
-    def test_to_add_new_bank_details(self) -> None:
-        """Test Add New Bank details with debugging"""
-        logger.info("📋 Test go add bank Details")
+    def test_to_add_new_emergency_contact(self) -> None:
+        """Test Add New emergency contact with debugging"""
         # Debug: Check current page
         logger.info(f"📍 Current URL: {self.page.url}")
         logger.info(f"📍 Page Title: {self.page.title()}")
@@ -45,31 +44,27 @@ class TestEmergencyContactPage:
         # Wait for page to be ready
         self.page.wait_for_load_state("domcontentloaded")
 
-        # # Take screenshot before clicking
-        # self.page.screenshot(path="before_click_edit.png", full_page=True)
-
-        # Debug: Check if Add Bank Button is visible
+        # Debug: Check if Add Emergency Contact Button is visible
         from utils.constants import SELF_SERVICE_PAGE
-        add_bank_detail_module_link = self.page.locator(SELF_SERVICE_PAGE.CLICK_BANK_DETAIL)
+        self_service_page = self.page.locator(SELF_SERVICE_PAGE.EMERGENCY_CONTACTS_BUTTON)
 
-        logger.info(f"🔍 Add Bank Button visible: {add_bank_detail_module_link.is_visible()}")
-        logger.info(f"🔍 Add Bank Button count: {add_bank_detail_module_link.count()}")
+        logger.info(f"🔍 Add Emergency Contact Button visible: {self_service_page.is_visible()}")
+        logger.info(f"🔍 Add Emergency Contact Button count: {self_service_page.count()}")
 
-        if add_bank_detail_module_link.count() > 0:
-            logger.info(f"🔍 Add Bank Button text: {add_bank_detail_module_link.text_content()}")
+        if self_service_page.count() > 0:
+            logger.info(f"🔍 Add Emergency Contact Button text: {self_service_page.text_content()}")
 
         # Click to add
-        add_bank_details_page = self.self_service_page.click_to_add_banking_details()
+        emergency_contacts_page = self.self_service_page.click_to_add_emergency_contacts_details()
 
         # Debug: Check navigation happened
         logger.info(f"📍 After click URL: {self.page.url}")
-        add_bank_details_page.create_new_bank_details()
-        logger.info("✅ Add bank details created successful")
+        emergency_contacts_page.create_new_emergency_contacts_details()
+        logger.info("✅ Add Emergency Contact details created successful")
 
     @pytest.mark.regression
-    def test_to_edit_bank_details(self) -> None:
-        """Test editing personal details with debugging"""
-        logger.info("📋 Test go add bank Details")
+    def test_to_edit_new_emergency_contact(self) -> None:
+        """Test edit emergency contact with debugging"""
         # Debug: Check current page
         logger.info(f"📍 Current URL: {self.page.url}")
         logger.info(f"📍 Page Title: {self.page.title()}")
@@ -77,20 +72,21 @@ class TestEmergencyContactPage:
         # Wait for page to be ready
         self.page.wait_for_load_state("domcontentloaded")
 
-        # # Take screenshot before clicking
-        # self.page.screenshot(path="before_click_edit.png", full_page=True)
-
-        # Debug: Check if Add Bank Button is visible
+        # Debug: Check if Add Emergency Contact Button is visible
         from utils.constants import SELF_SERVICE_PAGE
-        bank_detail_link = self.page.locator(SELF_SERVICE_PAGE.CLICK_BANK_DETAIL)
+        self_service_page = self.page.locator(SELF_SERVICE_PAGE.EMERGENCY_CONTACTS_BUTTON)
 
-        logger.info(f"🔍 Add Bank Button visible: {bank_detail_link.is_visible()}")
-        logger.info(f"🔍 Add Bank Button count: {bank_detail_link.count()}")
+        logger.info(f"🔍 Add Emergency Contact Button visible: {self_service_page.is_visible()}")
+        logger.info(f"🔍 Add Emergency Contact Button count: {self_service_page.count()}")
 
-        if bank_detail_link.count() > 0:
-            logger.info(f"🔍 Add Bank Button text: {bank_detail_link.text_content()}")
+        if self_service_page.count() > 0:
+            logger.info(f"🔍 Add Emergency Contact Button text: {self_service_page.text_content()}")
 
-        # Click to edit
-        edit_bank_details_page = self.self_service_page.click_to_edit_bank_details()
-        edit_bank_details_page.edit_bank_details()
-        edit_bank_details_page.wait(5000)
+        # Click to add
+        emergency_contacts_page = self.self_service_page.click_to_add_emergency_contacts_details()
+
+        # Debug: Check navigation happened
+        logger.info(f"📍 After click URL: {self.page.url}")
+        emergency_contacts_page.create_new_emergency_contacts_details()
+        logger.info("✅ Add Emergency Contact details created successful")
+        emergency_contacts_page.wait(5000)

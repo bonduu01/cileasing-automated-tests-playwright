@@ -14,14 +14,14 @@ from utils.decorators import log_method
 logger = logging.getLogger(__name__)
 
 
-class AddEmergencyContactPage(BasePage):
+class EditEmergencyContactPage(BasePage):
     """Page Object for the Home Page."""
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
 
     @log_method
-    def create_new_emergency_contacts_details(self, first_name: str | None = None, other_name: str | None = None,
+    def edit_emergency_contacts_details(self, first_name: str | None = None, other_name: str | None = None,
                               surname: str | None = None, maiden_name: str | None = None,
                               previous_name: str | None = None, mobile_number: str | None = None,
                               work_number: str | None = None, relationship: str | None = None,

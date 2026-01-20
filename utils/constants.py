@@ -43,6 +43,7 @@ class SelfServicePageSelectors:
     ADD_NEW_BANK_DETAIL_BUTTON: str = "button.px-4.py-1.text-\\[\\#4F5E71\\].bg-white.border-\\[1px\\]"
     EDIT_BANK_BUTTON: str = "button:has(svg path[stroke='#5141A4'])"
     EMERGENCY_CONTACTS_BUTTON = "role=button[name='Emergency Contacts']"
+    EMERGENCY_CONTACTS_ADD_BUTTON = "button[type='button']:has-text('Add New')"
 
 
 @dataclass(frozen=True)
@@ -52,7 +53,6 @@ class EditSelfServicePageSelectors:
     JOB_TITLE: str = 'input[name="jobTitle"]'
     EDIT_SUBMIT_BUTTON: str = "button:has-text('Submit')"
 
-
 @dataclass(frozen=True)
 class AddBankDetailsPageSelectors:
     """Selectors for the Add bank Details Self-Service Page."""
@@ -61,7 +61,6 @@ class AddBankDetailsPageSelectors:
     BANK_ID: str = 'input[name="financialInstitutionId"]'
     SORT_CODE: str = "input[name='sortingCode']"
     ADD_BANK_BUTTON: str = "button:has-text('Add Bank')"
-
 
 @dataclass(frozen=True)
 class EditBankDetailsPageSelectors:
@@ -73,6 +72,22 @@ class EditBankDetailsPageSelectors:
     EDIT_SUBMIT_BUTTON: str = "button:has-text('Save Changes')"
 
 
+@dataclass(frozen=True)
+class AddEmergencyContactPageSelectors:
+    FIRST_NAME: str = 'input[name="firstName"]'
+    VERIFY_FIRST_NAME: str = 'text="First Name cannot be blank"'
+    OTHER_NAME: str = 'input[name="otherName"]'
+    SURNAME: str = 'input[name="surname"]'
+    VERIFY_SURNAME: str = "text=Surname cannot be blank"
+    MAIDEN_NAME: str = "input[name='maidenName']"
+    PREVIOUS_NAME: str = "input[name='previousName']"
+    MOBILE_NUMBER: str = "input[name='mobileNumber']"
+    WORK_NUMBER: str = "input[name='workNumber']"
+    RELATIONSHIP: str = "input[name='relationship']"
+    EMAIL: str = "input[name='email']"
+    LOCATION: str = "input[name='location']"
+    ADD_CONTACT_BUTTON: str = "button:has-text('Add Contact')"
+
 
 # Create singleton instances
 HOME_PAGE = HomePageSelectors()
@@ -81,3 +96,4 @@ SELF_SERVICE_PAGE = SelfServicePageSelectors()
 EDIT_SELF_SERVICE_PAGE = EditSelfServicePageSelectors()
 ADD_BANK_DETAILS_PAGE = AddBankDetailsPageSelectors()
 EDIT_BANK_DETAILS_PAGE = EditBankDetailsPageSelectors()
+ADD_EMERGENCY_CONTACT_PAGE = AddEmergencyContactPageSelectors()
