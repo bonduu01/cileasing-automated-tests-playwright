@@ -6,8 +6,9 @@ from playwright.sync_api import Page, expect
 
 from pages.add_bank_details_page import AddBankDetailsPage
 from pages.add_emergency_contact_page import AddEmergencyContactPage
-from pages.bvn_page import AddBnvPage
+from pages.add_bvn_page import AddBnvPage
 from pages.edit_bank_details_page import EditBankDetailsPage
+from pages.edit_bvn_page import EditBnvPage
 from pages.edit_emergency_contact_page import EditEmergencyContactPage
 from pages.edit_self_service_page import EditSelfServicePage
 from pages.home_page import HomePage
@@ -220,3 +221,10 @@ class SelfServicePage(BasePage):
         self.click_element(SELF_SERVICE_PAGE.ADD_BVN_BUTTON)
         logger.info("✅ Add Button Clicked Successfully")
         return AddBnvPage(self.page)
+
+    @log_method
+    def click_to_edit_bvn_number(self) -> EditBnvPage:
+        self.click_element(SELF_SERVICE_PAGE.BVN_BUTTON)
+        self.click_element(SELF_SERVICE_PAGE.EDIT_BVN_BUTTON)
+        logger.info("✅ Edit Button Clicked Successfully")
+        return EditBnvPage(self.page)

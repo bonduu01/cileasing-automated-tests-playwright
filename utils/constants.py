@@ -47,6 +47,7 @@ class SelfServicePageSelectors:
     EMERGENCY_CONTACTS_EDIT_BUTTON = "div.flex.items-center:has(svg) >> text=Edit"
     BVN_BUTTON: str = 'button:has-text("BVN")'
     ADD_BVN_BUTTON: str = 'button[type="button"]:has-text("Add New")'
+    EDIT_BVN_BUTTON: str = "button:has(svg path[d^='M7.3335'])"
 
 
 @dataclass(frozen=True)
@@ -114,6 +115,13 @@ class AddBnvPageSelectors:
     ADD_BVN_BUTTON: str = "button[type='submit']:has-text('Add BVN')"
 
 
+@dataclass(frozen=True)
+class EditBnvPageSelectors:
+    """Selectors for Add BVN Self-Service Page."""
+    EDIT_INPUT: str = 'input[name="bvn"]'
+    EDIT_BVN_BUTTON: str = 'button[type="submit"]:has-text("Save Changes")'
+
+
 # Create singleton instances
 HOME_PAGE = HomePageSelectors()
 LOGIN_PAGE = LoginPageSelectors()
@@ -124,3 +132,4 @@ EDIT_BANK_DETAILS_PAGE = EditBankDetailsPageSelectors()
 ADD_EMERGENCY_CONTACT_PAGE = AddEmergencyContactPageSelectors()
 EDIT_EMERGENCY_CONTACT_PAGE = EditEmergencyContactPageSelectors()
 ADD_BVN_PAGE = AddBnvPageSelectors()
+EDIT_BVN_PAGE = EditBnvPageSelectors()

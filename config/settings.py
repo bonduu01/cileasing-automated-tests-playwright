@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     location: str = ""
     relationship_1: str = ""
     test_bvn_number: str = '22857690876'
+    test_bvn_number1: str = '22857690879'
 
     # Browser Settings
     headless: bool = False

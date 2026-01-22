@@ -56,37 +56,26 @@ class TestBvnPage:
             logger.info(f"🔍 Add Bank Button text: {click_bvn_button.text_content()}")
 
         # Click to add
-        bvn_page = self.self_service_page.click_to_add_bvn_number()
+        add_bvn_page = self.self_service_page.click_to_add_bvn_number()
 
-        # Debug: Check navigation happened
         logger.info(f"📍 After click URL: {self.page.url}")
-        bvn_page.create_bvn()
+        add_bvn_page.create_bvn()
         logger.info("✅ BVN created successfully")
 
-    # @pytest.mark.regression
-    # def test_to_edit_bank_details(self) -> None:
-    #     """Test editing personal details with debugging"""
-    #     logger.info("📋 Test go add bank Details")
-    #     # Debug: Check current page
-    #     logger.info(f"📍 Current URL: {self.page.url}")
-    #     logger.info(f"📍 Page Title: {self.page.title()}")
-    #
-    #     # Wait for page to be ready
-    #     self.page.wait_for_load_state("domcontentloaded")
-    #
-    #     # # Take screenshot before clicking
-    #     # self.page.screenshot(path="before_click_edit.png", full_page=True)
-    #
-    #     # Debug: Check if Add Bank Button is visible
-    #     from utils.constants import SELF_SERVICE_PAGE
-    #     bank_detail_link = self.page.locator(SELF_SERVICE_PAGE.CLICK_BANK_DETAIL)
-    #
-    #     logger.info(f"🔍 Add Bank Button visible: {bank_detail_link.is_visible()}")
-    #     logger.info(f"🔍 Add Bank Button count: {bank_detail_link.count()}")
-    #
-    #     if bank_detail_link.count() > 0:
-    #         logger.info(f"🔍 Add Bank Button text: {bank_detail_link.text_content()}")
-    #
-    #     # Click to edit
-    #     edit_bank_details_page = self.self_service_page.click_to_edit_bank_details()
-    #     edit_bank_details_page.edit_bank_details()
+    @pytest.mark.regression
+    def test_to_edit_bvn(self) -> None:
+        """Test editing personal details with debugging"""
+        logger.info("📋 Test edit bvn")
+        # Debug: Check current page
+        logger.info(f"📍 Current URL: {self.page.url}")
+        logger.info(f"📍 Page Title: {self.page.title()}")
+
+        # Wait for page to be ready
+        self.page.wait_for_load_state("domcontentloaded")
+
+        # Click to add
+        edit_bvn_page = self.self_service_page.click_to_edit_bvn_number()
+
+        logger.info(f"📍 After click URL: {self.page.url}")
+        edit_bvn_page.edit_bvn()
+        logger.info("✅ BVN edited successfully")
