@@ -157,7 +157,11 @@ class BasePage:
         return locator.select_option(value=value)
 
     # base_page.py
-
+    def ant_select_date_picker(self, selector: str, date_value: str):
+        input_field = self.page.locator(selector)
+        input_field.wait_for(state="visible", timeout=5000)
+        input_field.clear()
+        input_field.fill(date_value)
     # base_page.py
 
     def ant_select_option(self, dropdown_locator: str, option_text: str):

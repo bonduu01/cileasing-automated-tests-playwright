@@ -48,6 +48,8 @@ class SelfServicePageSelectors:
     BVN_BUTTON: str = 'button:has-text("BVN")'
     ADD_BVN_BUTTON: str = 'button[type="button"]:has-text("Add New")'
     EDIT_BVN_BUTTON: str = "button:has(svg path[d^='M7.3335'])"
+    IDENTITY_BUTTON: str = "button:has-text('Identity')"
+    CLICK_IDENTITY_ADD_BUTTON: str = "button:has-text('Add New')"
 
 
 @dataclass(frozen=True)
@@ -122,6 +124,16 @@ class EditBnvPageSelectors:
     EDIT_BVN_BUTTON: str = 'button[type="submit"]:has-text("Save Changes")'
 
 
+@dataclass(frozen=True)
+class AddIdentityPageSelectors:
+    """Selectors for the Add bank Details Self-Service Page."""
+    IDENTITY_TYPE_DROPDOWN = ".ant-select-selector"
+    IDENTITY_TYPE: str = "DRIVERS LICENSE"
+    IDENTITY_ID: str = 'input[name="identityId"]'
+    ISSUED_DATE_SELECTOR: str = 'label:has-text("Issued Date") + div.ant-picker input'
+    EXPIRY_DATE_SELECTOR: str = 'label:has-text("Expiry Date") + div.ant-picker input'
+    ADD_IDENTITY_BUTTON: str = 'button:has-text("Add")'
+
 # Create singleton instances
 HOME_PAGE = HomePageSelectors()
 LOGIN_PAGE = LoginPageSelectors()
@@ -133,3 +145,4 @@ ADD_EMERGENCY_CONTACT_PAGE = AddEmergencyContactPageSelectors()
 EDIT_EMERGENCY_CONTACT_PAGE = EditEmergencyContactPageSelectors()
 ADD_BVN_PAGE = AddBnvPageSelectors()
 EDIT_BVN_PAGE = EditBnvPageSelectors()
+ADD_IDENTITY_PAGE = AddIdentityPageSelectors()

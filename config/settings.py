@@ -46,8 +46,12 @@ class Settings(BaseSettings):
     email: str = ""
     location: str = ""
     relationship_1: str = ""
-    test_bvn_number: str = '22857690876'
-    test_bvn_number1: str = '22857690879'
+    test_bvn_number: str = '22857690875'
+    test_bvn_number1: str = '22857690432'
+    test_identity_type: str = ''
+    test_identity_id: str = ''
+    test_issued_date: str = ''
+    test_expiry_date: str = ''
 
     # Browser Settings
     headless: bool = False

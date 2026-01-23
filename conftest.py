@@ -84,7 +84,9 @@ def browser(playwright_instance: Playwright) -> Generator[Browser, None, None]:
     browser = playwright_instance.chromium.launch(
         headless=settings.headless,
         slow_mo=settings.slow_mo,
+        args=['--start-maximized']
     )
+
 
     # browser = playwright_instance.webkit.launch(
     #     headless=settings.headless,
@@ -117,7 +119,7 @@ def context(browser: Browser) -> Generator[BrowserContext, None, None]:
         context_options["record_video_dir"] = settings.video_dir
         logger.info(f"   🎥 Video recording enabled: {settings.video_dir}")
 
-    context = browser.new_context(**context_options)
+    context = browser.new_context(**context_options, no_viewport=True)
     context.set_default_timeout(settings.timeout)
 
     logger.info(f"   ✅ Context created (timeout={settings.timeout}ms)")

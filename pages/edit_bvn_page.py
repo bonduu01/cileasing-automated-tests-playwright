@@ -22,10 +22,10 @@ class EditBnvPage(BasePage):
 
         logger.info(f"🔐 Attempting to create bank details using: {test_bvn_number}")
 
-        self.clear_input(EDIT_BVN_PAGE.EDIT_INPUT)
-        self.fill_input(EDIT_BVN_PAGE.EDIT_INPUT, test_bvn_number)
-        self.verify_input_value_length(EDIT_BVN_PAGE.EDIT_INPUT, 11)
-        self.verify_element_has_value(EDIT_BVN_PAGE.EDIT_INPUT, test_bvn_number)
+        self.clear_input(EDIT_BVN_PAGE.BVN_INPUT)
+        self.fill_input(EDIT_BVN_PAGE.BVN_INPUT, test_bvn_number)
+        self.verify_input_value_length(EDIT_BVN_PAGE.BVN_INPUT, 11)
+        self.verify_element_has_value(EDIT_BVN_PAGE.BVN_INPUT, test_bvn_number)
         logger.info(f"✅ Bank VPN: {test_bvn_number} edited and verified")
         self.click_element(EDIT_BVN_PAGE.EDIT_BVN_BUTTON)
         logger.info(f"✅ Bank Created Successfully")
