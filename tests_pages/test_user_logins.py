@@ -13,20 +13,6 @@ logger = logging.getLogger(__name__)
 class TestUserLogins:
     """Test suite for User Login functionalities."""
 
-    @pytest.fixture(autouse=True)
-    def setup_test_logging(self, request):
-        """Log test setup and teardown."""
-        test_name = request.node.name
-        logger.info(f"\n{'#' * 80}")
-        logger.info(f"🧪 STARTING TEST: {test_name}")
-        logger.info(f"{'#' * 80}\n")
-
-        yield
-
-        logger.info(f"\n{'#' * 80}")
-        logger.info(f"🏁 FINISHED TEST: {test_name}")
-        logger.info(f"{'#' * 80}\n")
-
     @pytest.mark.smoke
     @pytest.mark.login
     @pytest.mark.regression

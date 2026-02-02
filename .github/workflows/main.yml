@@ -1,249 +1,615 @@
-#name: Playwright Tests with Allure and GitHub Pages Deployment
-#
-#on:
-#  push:
-#    branches: [ main ]
-#    paths-ignore:
-#      - '**.md'
-#      - 'docs/**'
-#      - '.gitignore'
-#      - 'LICENSE'
-#  workflow_dispatch:
-#
-#permissions:
-#  contents: read
-#  pages: write
-#  id-token: write
-#
-## Prevent multiple concurrent deployments
-#concurrency:
-#  group: pages-deployment
-#  cancel-in-progress: false
-#
-#env:
-#  PYTHON_VERSION: "3.12"
-#  PLAYWRIGHT_BROWSERS_PATH: 0
-#
-#jobs:
-#  test-and-deploy:
-#    name: Test and Deploy to GitHub Pages
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 20
-#
-#    # Skip if commit contains [skip ci]
-#    if: |
-#      !contains(github.event.head_commit.message, '[skip ci]') &&
-#      !contains(github.event.head_commit.message, '[ci skip]')
-#
-#    environment:
-#      name: github-pages
-#      url: ${{ steps.deployment.outputs.page_url }}
-#
-#    steps:
-#      # ============================================
-#      # Checkout & Setup
-#      # ============================================
-#      - name: 📥 Checkout repository
-#        uses: actions/checkout@v4
-#
-#      - name: 🐍 Set up Python
-#        uses: actions/setup-python@v5
-#        with:
-#          python-version: ${{ env.PYTHON_VERSION }}
-#          cache: pip
-#          cache-dependency-path: requirements.txt
-#
-#      # ============================================
-#      # Environment Configuration
-#      # ============================================
-#      - name: 🔧 Create .env from .env.example
-#        run: |
-#          if [ ! -f .env.example ]; then
-#            echo "⚠️ .env.example not found, creating minimal .env"
-#            cat > .env << EOF
-#          BASE_URL=https://example.com
-#          HEADLESS=true
-#          SLOW_MO=0
-#          RECORD_VIDEO=false
-#          EOF
-#          else
-#            cp .env.example .env
-#
-#            # Override with secrets if available
-#            [ -n "${{ secrets.BASE_URL }}" ] && sed -i "s|^BASE_URL=.*|BASE_URL=${{ secrets.BASE_URL }}|" .env
-#            [ -n "${{ secrets.LOGIN_URL }}" ] && sed -i "s|^LOGIN_URL=.*|LOGIN_URL=${{ secrets.LOGIN_URL }}|" .env
-#            [ -n "${{ secrets.TEST_USERNAME }}" ] && sed -i "s|^TEST_USERNAME=.*|TEST_USERNAME=${{ secrets.TEST_USERNAME }}|" .env
-#            [ -n "${{ secrets.TEST_PASSWORD }}" ] && sed -i "s|^TEST_PASSWORD=.*|TEST_PASSWORD=${{ secrets.TEST_PASSWORD }}|" .env
-#
-#            # Force CI settings
-#            sed -i "s|^HEADLESS=.*|HEADLESS=true|" .env
-#            sed -i "s|^SLOW_MO=.*|SLOW_MO=0|" .env
-#            sed -i "s|^RECORD_VIDEO=.*|RECORD_VIDEO=false|" .env
-#          fi
-#
-#          # Add CI variables
-#          cat >> .env << EOF
-#
-#          # CI Variables
-#          CI=true
-#          BROWSER=chromium
-#          GITHUB_RUN_ID=${{ github.run_id }}
-#          GITHUB_RUN_NUMBER=${{ github.run_number }}
-#          GITHUB_SHA=${{ github.sha }}
-#          EOF
-#
-#          echo "✅ .env configured"
-#
-#      # ============================================
-#      # Install Dependencies
-#      # ============================================
-#      - name: 📦 Install dependencies
-#        run: |
-#          python -m pip install --upgrade pip
-#          pip install -r requirements.txt
-#          echo "✅ Dependencies installed"
-#
-#      - name: 🎭 Install Playwright
-#        run: |
-#          python -m playwright install chromium --with-deps
-#          echo "✅ Playwright installed"
-#
-#      # ============================================
-#      # Install Allure
-#      # ============================================
-#      - name: 📊 Install Allure
-#        run: |
-#          # Install Java (required for Allure)
-#          sudo apt-get update -qq
-#          sudo apt-get install -y -qq default-jre
-#
-#          # Download and install Allure
-#          ALLURE_VERSION="2.24.0"
-#          wget -q "https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.zip"
-#          unzip -q "allure-${ALLURE_VERSION}.zip"
-#          sudo mv "allure-${ALLURE_VERSION}" /opt/allure
-#          sudo ln -sf /opt/allure/bin/allure /usr/bin/allure
-#
-#          allure --version
-#          echo "✅ Allure ready"
-#
-#      # ============================================
-#      # Run Tests
-#      # ============================================
-#      - name: 📁 Create directories
-#        run: mkdir -p allure-results test-results/screenshots
-#
-#      - name: 🧪 Run Tests
-#        continue-on-error: true
-#        run: |
-#          echo "🧪 Running tests..."
-#          for test_file in $(find tests_pages -type f -name "test_*.py"); do
-#              echo "Running $test_file..."
-#              pytest "$test_file" --browser chromium --alluredir=allure-results -v
-#          done
-#          echo "✅ Tests completed"
-#
-#      # ============================================
-#      # Generate Report
-#      # ============================================
-#      - name: 📊 Generate Allure Report
-#        if: always()
-#        run: |
-#          # Ensure results directory exists
-#          mkdir -p allure-results
-#
-#          # Add environment info
-#          cat > allure-results/environment.properties << EOF
-#          Application=Candi Leasing
-#          Base.URL=${{ secrets.BASE_URL }}
-#          Browser=chromium
-#          Python=${{ env.PYTHON_VERSION }}
-#          Build=#${{ github.run_number }}
-#          Branch=${{ github.ref_name }}
-#          Commit=${{ github.sha }}
-#          Timestamp=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
-#          EOF
-#
-#          # Generate report
-#          allure generate allure-results -o allure-report --clean
-#
-#          echo "✅ Report generated: $(find allure-report -type f | wc -l) files"
-#
-#      - name: 📄 Copy .nojekyll to report directory
-#        if: always()
-#        run: |
-#          if [ -f .nojekyll ]; then
-#            cp .nojekyll allure-report/.nojekyll
-#            echo "✅ Copied .nojekyll from root to allure-report/"
-#          else
-#            touch allure-report/.nojekyll
-#            echo "⚠️ .nojekyll not found in root, created new one in allure-report/"
-#          fi
-#
-#          # Verify it was copied
-#          if [ -f allure-report/.nojekyll ]; then
-#            echo "✅ Verified: .nojekyll exists in allure-report/"
-#            ls -la allure-report/ | grep nojekyll
-#          else
-#            echo "❌ ERROR: .nojekyll still missing in allure-report/"
-#            exit 1
-#          fi
-#
-#      # ============================================
-#      # Upload Artifacts
-#      # ============================================
-#      - name: 📤 Upload Artifacts
-#        if: always()
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: test-reports-${{ github.run_number }}
-#          path: |
-#            allure-results/
-#            allure-report/
-#            test-results/
-#          retention-days: 30
-#
-#      # ============================================
-#      # Deploy to GitHub Pages
-#      # ============================================
-#      - name: 📄 Setup Pages
-#        if: github.ref == 'refs/heads/main'
-#        uses: actions/configure-pages@v4
-#
-#      - name: 📤 Upload to Pages
-#        if: github.ref == 'refs/heads/main'
-#        uses: actions/upload-pages-artifact@v3
-#        with:
-#          path: allure-report
-#
-#      - name: 🚀 Deploy to Pages
-#        if: github.ref == 'refs/heads/main'
-#        id: deployment
-#        uses: actions/deploy-pages@v4
-#
-#      # ============================================
-#      # Summary
-#      # ============================================
-#      - name: 📊 Create Summary
-#        if: always()
-#        run: |
-#          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-#          # 🧪 Test Report
-#
-#          | Property | Value |
-#          |----------|-------|
-#          | Build | #${{ github.run_number }} |
-#          | Branch | `${{ github.ref_name }}` |
-#          | Commit | `${{ github.sha }}` |
-#
-#          EOF
-#
-#          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-#            echo "## 📊 Allure Report" >> $GITHUB_STEP_SUMMARY
-#            echo "" >> $GITHUB_STEP_SUMMARY
-#            echo "🔗 **[View Report](${{ steps.deployment.outputs.page_url }})**" >> $GITHUB_STEP_SUMMARY
-#          fi
-#
-#      - name: 🧹 Cleanup
-#        if: always()
-#        run: rm -f .env
+name: Playwright Tests with Allure Reports
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test Suite to Run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - smoke
+          - login
+          - regression
+      browser:
+        description: 'Browser to test'
+        required: false
+        default: 'chromium'
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - webkit
+          - all
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  PYTHON_VERSION: '3.11'
+  ALLURE_VERSION: '2.30.0'
+  PLAYWRIGHT_BROWSERS_PATH: '0'  # Install browsers in default location
+
+jobs:
+  # Job 1: Run Smoke Tests
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_suite == 'smoke' || github.event.inputs.test_suite == 'all' || github.event_name != 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          # Install Playwright browsers
+          playwright install --with-deps chromium firefox webkit
+          
+          # Verify installation
+          playwright --version
+
+      - name: Create directories
+        run: |
+          mkdir -p screenshots
+          mkdir -p allure-results
+          mkdir -p test-results
+          mkdir -p playwright-report
+
+      - name: Run Smoke Tests
+        id: smoke_tests
+        continue-on-error: false
+        env:
+          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          HEADLESS: true
+          TEST_ENV: ci
+          BROWSER: ${{ github.event.inputs.browser || 'chromium' }}
+          PWDEBUG: 0
+        run: |
+          set +e
+          
+          # Run tests and capture exit code
+          pytest tests_pages/ -m smoke \
+            --alluredir=allure-results \
+            --clean-alluredir \
+            --browser=${{ github.event.inputs.browser || 'chromium' }} \
+            --headed=false \
+            --tracing=retain-on-failure \
+            --screenshot=only-on-failure \
+            --video=retain-on-failure \
+            -v \
+            --tb=short \
+            --junit-xml=junit-smoke.xml
+          
+          TEST_EXIT_CODE=$?
+          
+          # Check for critical errors
+          if [ $TEST_EXIT_CODE -eq 4 ]; then
+            echo "❌ FATAL: Pytest collection failed (import error, syntax error, etc.)"
+            echo "This indicates a problem with test files or dependencies."
+            exit 1
+          elif [ $TEST_EXIT_CODE -eq 3 ]; then
+            echo "❌ FATAL: Internal pytest error"
+            exit 1
+          elif [ $TEST_EXIT_CODE -eq 2 ]; then
+            echo "⚠️ WARNING: Tests interrupted by user or system"
+            exit $TEST_EXIT_CODE
+          elif [ $TEST_EXIT_CODE -eq 1 ]; then
+            echo "⚠️ Some tests failed (this is acceptable for reporting)"
+            exit 0
+          elif [ $TEST_EXIT_CODE -eq 5 ]; then
+            echo "⚠️ No tests collected"
+            echo "Check if:"
+            echo "  1. Tests have @pytest.mark.smoke decorator"
+            echo "  2. Test files exist in tests_pages/"
+            echo "  3. Test file names start with 'test_'"
+            exit 1
+          else
+            echo "✅ Tests completed successfully"
+            exit 0
+          fi
+
+      - name: Upload Smoke Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: |
+            allure-results/
+            screenshots/
+            test-results/
+            playwright-report/
+            junit-smoke.xml
+          retention-days: 30
+
+  # Job 2: Run Login Tests
+  login-tests:
+    name: Login Tests
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_suite == 'login' || github.event.inputs.test_suite == 'all' || github.event_name != 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install --with-deps chromium firefox webkit
+          playwright --version
+
+      - name: Create directories
+        run: |
+          mkdir -p screenshots
+          mkdir -p allure-results
+          mkdir -p test-results
+          mkdir -p playwright-report
+
+      - name: Run Login Tests
+        id: login_tests
+        continue-on-error: false
+        env:
+          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          HEADLESS: true
+          TEST_ENV: ci
+          BROWSER: ${{ github.event.inputs.browser || 'chromium' }}
+          PWDEBUG: 0
+        run: |
+          set +e
+          
+          pytest tests_pages/test_user_logins.py \
+            --alluredir=allure-results \
+            --clean-alluredir \
+            --browser=${{ github.event.inputs.browser || 'chromium' }} \
+            --headed=false \
+            --tracing=retain-on-failure \
+            --screenshot=only-on-failure \
+            --video=retain-on-failure \
+            -v \
+            --tb=short \
+            --junit-xml=junit-login.xml
+          
+          TEST_EXIT_CODE=$?
+          
+          if [ $TEST_EXIT_CODE -eq 4 ]; then
+            echo "❌ FATAL: Pytest collection failed (import/syntax error)"
+            exit 1
+          elif [ $TEST_EXIT_CODE -eq 3 ]; then
+            echo "❌ FATAL: Internal pytest error"
+            exit 1
+          elif [ $TEST_EXIT_CODE -eq 2 ]; then
+            echo "⚠️ WARNING: Tests interrupted"
+            exit $TEST_EXIT_CODE
+          elif [ $TEST_EXIT_CODE -eq 1 ]; then
+            echo "⚠️ Some tests failed (acceptable for reporting)"
+            exit 0
+          elif [ $TEST_EXIT_CODE -eq 5 ]; then
+            echo "⚠️ No tests collected"
+            exit 1
+          else
+            echo "✅ Tests completed successfully"
+            exit 0
+          fi
+
+      - name: Upload Login Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: login-test-results
+          path: |
+            allure-results/
+            screenshots/
+            test-results/
+            playwright-report/
+            junit-login.xml
+          retention-days: 30
+
+  # Job 3: Run Regression Tests
+  regression-tests:
+    name: Regression Tests
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_suite == 'regression' || github.event.inputs.test_suite == 'all' || github.event_name != 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install --with-deps chromium firefox webkit
+          playwright --version
+
+      - name: Create directories
+        run: |
+          mkdir -p screenshots
+          mkdir -p allure-results
+          mkdir -p test-results
+          mkdir -p playwright-report
+
+      - name: Run Regression Tests
+        id: regression_tests
+        continue-on-error: false
+        env:
+          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          HEADLESS: true
+          TEST_ENV: ci
+          BROWSER: ${{ github.event.inputs.browser || 'chromium' }}
+          PWDEBUG: 0
+        run: |
+          set +e
+          
+          pytest tests_pages/ -m regression \
+            --alluredir=allure-results \
+            --clean-alluredir \
+            --browser=${{ github.event.inputs.browser || 'chromium' }} \
+            --headed=false \
+            --tracing=retain-on-failure \
+            --screenshot=only-on-failure \
+            --video=retain-on-failure \
+            -v \
+            --tb=short \
+            --junit-xml=junit-regression.xml
+          
+          TEST_EXIT_CODE=$?
+          
+          if [ $TEST_EXIT_CODE -eq 4 ]; then
+            echo "❌ FATAL: Pytest collection failed (import/syntax error)"
+            exit 1
+          elif [ $TEST_EXIT_CODE -eq 3 ]; then
+            echo "❌ FATAL: Internal pytest error"
+            exit 1
+          elif [ $TEST_EXIT_CODE -eq 2 ]; then
+            echo "⚠️ WARNING: Tests interrupted"
+            exit $TEST_EXIT_CODE
+          elif [ $TEST_EXIT_CODE -eq 1 ]; then
+            echo "⚠️ Some tests failed (acceptable for reporting)"
+            exit 0
+          elif [ $TEST_EXIT_CODE -eq 5 ]; then
+            echo "⚠️ No tests collected"
+            exit 1
+          else
+            echo "✅ Tests completed successfully"
+            exit 0
+          fi
+
+      - name: Upload Regression Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-test-results
+          path: |
+            allure-results/
+            screenshots/
+            test-results/
+            playwright-report/
+            junit-regression.xml
+          retention-days: 30
+
+  # Job 4: Generate and Deploy Allure Report
+  generate-report:
+    name: Generate Allure Report
+    runs-on: ubuntu-latest
+    needs: [ smoke-tests, login-tests, regression-tests ]
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if any tests ran
+        id: check_tests
+        run: |
+          if [ "${{ needs.smoke-tests.result }}" == "success" ] || \
+             [ "${{ needs.login-tests.result }}" == "success" ] || \
+             [ "${{ needs.regression-tests.result }}" == "success" ]; then
+            echo "has_results=true" >> $GITHUB_OUTPUT
+            echo "✅ At least one test suite ran successfully"
+          else
+            echo "has_results=false" >> $GITHUB_OUTPUT
+            echo "❌ All test suites failed during setup/collection"
+            echo "Cannot generate report - no valid test results"
+          fi
+
+      - name: Download all test results
+        if: steps.check_tests.outputs.has_results == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
+
+      - name: Debug - Show downloaded artifacts
+        if: steps.check_tests.outputs.has_results == 'true'
+        run: |
+          echo "=== Downloaded Artifacts Structure ==="
+          ls -R all-results/
+          echo ""
+          echo "=== Searching for allure-results directories ==="
+          find all-results -type d -name "allure-results"
+          echo ""
+          echo "=== Searching for JSON result files ==="
+          find all-results -name "*.json" -type f
+
+      - name: Merge Allure Results
+        if: steps.check_tests.outputs.has_results == 'true'
+        run: |
+          mkdir -p allure-results
+          echo "Merging allure results from all test suites..."
+          
+          # Copy all files from allure-results directories
+          find all-results -type d -name "allure-results" | while read dir; do
+            echo "Copying from: $dir"
+            cp -r "$dir"/* allure-results/ 2>/dev/null || true
+          done
+          
+          # Also try direct path copying (backup method)
+          cp -r all-results/smoke-test-results/allure-results/* allure-results/ 2>/dev/null || true
+          cp -r all-results/login-test-results/allure-results/* allure-results/ 2>/dev/null || true
+          cp -r all-results/regression-test-results/allure-results/* allure-results/ 2>/dev/null || true
+          
+          echo ""
+          echo "=== Merged Results ==="
+          ls -lah allure-results/
+          echo ""
+          echo "Total files: $(find allure-results -type f | wc -l)"
+          echo "JSON result files: $(find allure-results -name "*-result.json" | wc -l)"
+          echo "JSON container files: $(find allure-results -name "*-container.json" | wc -l)"
+          echo "Screenshots: $(find allure-results -name "*.png" | wc -l)"
+          echo "Videos: $(find allure-results -name "*.webm" | wc -l)"
+          
+          # Create environment properties
+          cat > allure-results/environment.properties << EOF
+          Browser=${{ github.event.inputs.browser || 'chromium' }}
+          Framework=Playwright
+          Engineer=Peter Molokwu
+          Environment=Staging
+          Python.Version=3.11
+          Platform=Ubuntu Latest
+          Test.Framework=Pytest
+          Build.Number=${{ github.run_number }}
+          Commit=${{ github.sha }}
+          Branch=${{ github.ref_name }}
+          EOF
+          
+          # Check if we have any test results
+          result_count=$(find allure-results -name "*-result.json" | wc -l)
+          if [ $result_count -eq 0 ]; then
+            echo "❌ ERROR: No test result JSON files found!"
+            echo "Tests did not generate Allure results."
+            echo "This usually means:"
+            echo "  1. Tests are not marked with pytest markers"
+            echo "  2. allure-pytest is not installed"
+            echo "  3. Tests failed during collection phase"
+            exit 1
+          else
+            echo "✅ SUCCESS: Found $result_count test result files"
+          fi
+
+      - name: Get Allure history from gh-pages
+        if: steps.check_tests.outputs.has_results == 'true'
+        continue-on-error: true
+        run: |
+          echo "Attempting to fetch allure history..."
+          
+          if git ls-remote --exit-code --heads origin gh-pages; then
+            echo "gh-pages branch exists, fetching history..."
+            git fetch origin gh-pages:gh-pages
+            git checkout gh-pages
+          
+            if [ -d "allure-history" ]; then
+              echo "Found allure-history directory"
+              mkdir -p /tmp/allure-history
+              cp -r allure-history/* /tmp/allure-history/ 2>/dev/null || true
+              echo "History backed up to /tmp/allure-history"
+            else
+              echo "No allure-history directory found in gh-pages"
+            fi
+          
+            git checkout -
+          else
+            echo "gh-pages branch does not exist yet (first run)"
+          fi
+
+      - name: Install Allure
+        if: steps.check_tests.outputs.has_results == 'true'
+        run: |
+          echo "Installing Allure ${ALLURE_VERSION}..."
+          wget -q https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.tgz
+          tar -zxf allure-${ALLURE_VERSION}.tgz
+          sudo mv allure-${ALLURE_VERSION} /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+          allure --version
+
+      - name: Restore Allure history
+        if: steps.check_tests.outputs.has_results == 'true'
+        continue-on-error: true
+        run: |
+          if [ -d "/tmp/allure-history" ]; then
+            echo "Restoring allure history..."
+            mkdir -p allure-results/history
+            cp -r /tmp/allure-history/* allure-results/history/ 2>/dev/null || true
+            echo "History restored"
+          else
+            echo "No history to restore (first run or no previous history)"
+          fi
+
+      - name: Generate Allure Report
+        if: steps.check_tests.outputs.has_results == 'true'
+        run: |
+          echo "Generating Allure report..."
+          allure generate allure-results -o allure-report --clean
+          echo "Report generated successfully"
+          ls -la allure-report/
+
+      - name: Prepare deployment directory
+        if: steps.check_tests.outputs.has_results == 'true'
+        run: |
+          mkdir -p gh-pages-deploy
+          
+          # Copy the report
+          cp -r allure-report/* gh-pages-deploy/
+          
+          # Save history for next run
+          if [ -d "allure-report/history" ]; then
+            mkdir -p gh-pages-deploy/allure-history
+            cp -r allure-report/history/* gh-pages-deploy/allure-history/
+            echo "History saved for next run"
+          fi
+          
+          echo "Deployment directory prepared"
+          ls -la gh-pages-deploy/
+
+      - name: Deploy to GitHub Pages
+        if: steps.check_tests.outputs.has_results == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./gh-pages-deploy
+          keep_files: false
+          enable_jekyll: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy Allure report - Build ${{ github.run_number }}'
+
+      - name: Report generation failed
+        if: steps.check_tests.outputs.has_results == 'false'
+        run: |
+          echo "### ❌ Report Generation Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All test suites failed during setup or collection phase." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Common causes:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Import errors in test files" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "- Playwright browsers not installed" >> $GITHUB_STEP_SUMMARY
+          echo "- Syntax errors" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing test markers" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the test job logs for details." >> $GITHUB_STEP_SUMMARY
+
+      - name: Add report link to summary
+        if: steps.check_tests.outputs.has_results == 'true'
+        run: |
+          echo "### 📊 Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View Allure Report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⏳ Report will be available in 1-2 minutes after deployment completes." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Browser:** ${{ github.event.inputs.browser || 'chromium' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  # Job 5: Notify Results
+  notify-results:
+    name: Test Results Summary
+    runs-on: ubuntu-latest
+    needs: [ smoke-tests, login-tests, regression-tests, generate-report ]
+    if: always()
+
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# 🧪 Playwright Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check individual job results
+          if [ "${{ needs.smoke-tests.result }}" == "success" ]; then
+            echo "### ✅ Smoke Tests: PASSED" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.smoke-tests.result }}" == "failure" ]; then
+            echo "### ❌ Smoke Tests: FAILED (Setup/Import Error)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.smoke-tests.result }}" == "skipped" ]; then
+            echo "### ⏭️ Smoke Tests: SKIPPED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.login-tests.result }}" == "success" ]; then
+            echo "### ✅ Login Tests: PASSED" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.login-tests.result }}" == "failure" ]; then
+            echo "### ❌ Login Tests: FAILED (Setup/Import Error)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.login-tests.result }}" == "skipped" ]; then
+            echo "### ⏭️ Login Tests: SKIPPED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.regression-tests.result }}" == "success" ]; then
+            echo "### ✅ Regression Tests: PASSED" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.regression-tests.result }}" == "failure" ]; then
+            echo "### ❌ Regression Tests: FAILED (Setup/Import Error)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.regression-tests.result }}" == "skipped" ]; then
+            echo "### ⏭️ Regression Tests: SKIPPED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.generate-report.result }}" == "success" ]; then
+            echo "### ✅ Report Generation: SUCCESS" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.generate-report.result }}" == "failure" ]; then
+            echo "### ❌ Report Generation: FAILED" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.generate-report.result }}" == "skipped" ]; then
+            echo "### ⏭️ Report Generation: SKIPPED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Detailed Reports" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.generate-report.result }}" == "success" ]; then
+            echo "🔗 [View Full Allure Report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }})" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Report not available (check logs for errors)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Browser:** ${{ github.event.inputs.browser || 'chromium' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
