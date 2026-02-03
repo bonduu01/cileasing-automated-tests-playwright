@@ -2,8 +2,6 @@ name: Playwright Tests with Allure Reports
 
 on:
   push:
-    #    branches: [ main, develop ]
-    #  pull_request:
     branches: [ main, develop ]
   schedule:
     # Run tests daily at 2 AM UTC
@@ -45,6 +43,7 @@ jobs:
   smoke-tests:
     name: Smoke Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 5  # Fail if smoke tests take longer than 10 minutes
     if: github.event.inputs.test_suite == 'smoke' || github.event.inputs.test_suite == 'all' || github.event_name != 'workflow_dispatch'
 
     steps:
@@ -138,6 +137,7 @@ jobs:
   login-tests:
     name: Login Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 3  # Fail if login tests take longer than 10 minutes
     if: github.event.inputs.test_suite == 'login' || github.event.inputs.test_suite == 'all' || github.event_name != 'workflow_dispatch'
 
     steps:
@@ -226,6 +226,7 @@ jobs:
   regression-tests:
     name: Regression Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 7  # Fail if regression tests take longer than 10 minutes (increase as test suite grows)
     if: github.event.inputs.test_suite == 'regression' || github.event.inputs.test_suite == 'all' || github.event_name != 'workflow_dispatch'
 
     steps:
@@ -314,6 +315,7 @@ jobs:
   generate-report:
     name: Generate Allure Report
     runs-on: ubuntu-latest
+    timeout-minutes: 5  # Report generation should be fast
     needs: [ smoke-tests, login-tests, regression-tests ]
     if: always()
 
@@ -484,6 +486,7 @@ jobs:
   notify-results:
     name: Test Results Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 2  # Summary generation should be very fast
     needs: [ smoke-tests, login-tests, regression-tests, generate-report ]
     if: always()
 
@@ -501,6 +504,8 @@ jobs:
             echo "### ❌ Smoke Tests: FAILED" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.smoke-tests.result }}" == "skipped" ]; then
             echo "### ⏭️ Smoke Tests: SKIPPED" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.smoke-tests.result }}" == "cancelled" ]; then
+            echo "### ⏱️ Smoke Tests: TIMEOUT (>10 minutes)" >> $GITHUB_STEP_SUMMARY
           fi
           
           if [ "${{ needs.login-tests.result }}" == "success" ]; then
@@ -509,6 +514,8 @@ jobs:
             echo "### ❌ Login Tests: FAILED" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.login-tests.result }}" == "skipped" ]; then
             echo "### ⏭️ Login Tests: SKIPPED" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.login-tests.result }}" == "cancelled" ]; then
+            echo "### ⏱️ Login Tests: TIMEOUT (>10 minutes)" >> $GITHUB_STEP_SUMMARY
           fi
           
           if [ "${{ needs.regression-tests.result }}" == "success" ]; then
@@ -517,12 +524,16 @@ jobs:
             echo "### ❌ Regression Tests: FAILED" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.regression-tests.result }}" == "skipped" ]; then
             echo "### ⏭️ Regression Tests: SKIPPED" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.regression-tests.result }}" == "cancelled" ]; then
+            echo "### ⏱️ Regression Tests: TIMEOUT (>10 minutes)" >> $GITHUB_STEP_SUMMARY
           fi
           
           if [ "${{ needs.generate-report.result }}" == "success" ]; then
             echo "### ✅ Report Generation: SUCCESS" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.generate-report.result }}" == "failure" ]; then
             echo "### ❌ Report Generation: FAILED" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.generate-report.result }}" == "cancelled" ]; then
+            echo "### ⏱️ Report Generation: TIMEOUT" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -536,6 +547,19 @@ jobs:
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Add timeout warning if any job was cancelled
+          if [ "${{ needs.smoke-tests.result }}" == "cancelled" ] || \
+             [ "${{ needs.login-tests.result }}" == "cancelled" ] || \
+             [ "${{ needs.regression-tests.result }}" == "cancelled" ]; then
+            echo "⚠️ **WARNING:** One or more test jobs exceeded the 10-minute timeout." >> $GITHUB_STEP_SUMMARY
+            echo "Consider:" >> $GITHUB_STEP_SUMMARY
+            echo "- Optimizing slow tests" >> $GITHUB_STEP_SUMMARY
+            echo "- Increasing timeout in workflow file" >> $GITHUB_STEP_SUMMARY
+            echo "- Running fewer tests in smoke suite" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
