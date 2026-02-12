@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class TestUserLogins:
     """Test suite for User Login functionalities."""
 
-    @pytest.mark.smoke
     @pytest.mark.login
     @pytest.mark.regression
     def test_go_to_home_page_with_pom(self, home_page: HomePage) -> None:
@@ -24,9 +23,7 @@ class TestUserLogins:
         logger.info("📋 Step 2: Verify home page loaded")
         home_page.verify_home_page_loads()
 
-    @pytest.mark.smoke
     @pytest.mark.login
-    @pytest.mark.regression
     def test_login_with_valid_credentials_with_pom(self, login_page: LoginPage) -> None:
         """Verify successful login with valid credentials using POM."""
         logger.info("📋 Test Valid Credentials")
@@ -50,9 +47,7 @@ class TestUserLogins:
         logger.info("📋 Step 6: Logout")
         self_service_page.click_to_logout()
 
-    @pytest.mark.smoke
     @pytest.mark.login
-    @pytest.mark.regression
     def test_login_with_wrong_username(self, login_page: LoginPage) -> None:
         """Verify login with explicitly provided credentials."""
         logger.info("📋 Test Login with wrong username")
@@ -68,9 +63,7 @@ class TestUserLogins:
         login_page.verify_error_message()
         login_page.verify_error_toast_visible()
 
-    @pytest.mark.smoke
     @pytest.mark.login
-    @pytest.mark.regression
     def test_login_with_wrong_password(self, login_page: LoginPage) -> None:
         """Verify login with explicitly provided credentials."""
         logger.info("📋 Test Login with wrong password")
@@ -86,9 +79,7 @@ class TestUserLogins:
         login_page.verify_error_message()
         login_page.verify_error_toast_visible()
 
-    @pytest.mark.smoke
     @pytest.mark.login
-    @pytest.mark.regression
     def test_login_with_no_password(self, login_page: LoginPage) -> None:
         """Verify login with explicitly provided credentials."""
         logger.info("📋 Test Login with no password")
@@ -102,9 +93,7 @@ class TestUserLogins:
         login_page.verify_password_blank_error()
         login_page.is_password_blank_error_visible()
 
-    @pytest.mark.smoke
     @pytest.mark.login
-    @pytest.mark.regression
     def test_login_with_no_username(self, login_page: LoginPage) -> None:
         """Verify login with explicitly provided credentials."""
         logger.info("📋 Test Login with no username")
