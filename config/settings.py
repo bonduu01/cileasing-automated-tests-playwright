@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     test_job_title: str = "HEAD OF IT"
     bank_name: str = "GLOBUS BANK"
     new_bank_name: str = "FIRST BANK PLC"
-    bank_id: str = ""
+    bank_id: str = "2234567890"
     sort_code: str = "033"
     first_name: str = ""
     other_name: str = ""
