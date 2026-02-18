@@ -4,7 +4,7 @@ Credentials and URLs should be loaded from .env via config/settings.py
 """
 
 from dataclasses import dataclass
-
+from config import settings
 
 @dataclass(frozen=True)
 class HomePageSelectors:
@@ -72,7 +72,7 @@ class AddBankDetailsPageSelectors:
 class EditBankDetailsPageSelectors:
     """Selectors for the Edit bank Details Self-Service Page."""
     BANK_NAME_DROPDOWN = ".ant-select-selector"
-    BANK_NAME: str = "GLOBUS BANK"
+    BANK_NAME: str = settings.bank_name
     BANK_ID: str = 'input[name="financialInstitutionId"]'
     SORT_CODE: str = "input[name='sortingCode']"
     EDIT_SUBMIT_BUTTON: str = "button:has-text('Save Changes')"

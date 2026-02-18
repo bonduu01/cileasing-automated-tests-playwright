@@ -24,9 +24,9 @@ class EditBankDetailsPage(BasePage):
     def edit_bank_details(self, bank_name: str | None = None, bank_id: str | None = None, sort_code: str | None =
     None) -> None:
         """ Add a default bank account number """
-        bank_name = bank_name or settings.bank_name
+        bank_name = bank_name or settings.new_bank_name
         bank_id = bank_id or settings.bank_id
-        sort_code = sort_code or settings.sort_code
+        sort_code = (sort_code or settings.sort_code) + "1"
 
         # Clear textboxes
         self.clear_input(EDIT_BANK_DETAILS_PAGE.BANK_ID)
@@ -36,7 +36,7 @@ class EditBankDetailsPage(BasePage):
         logger.info(f"🔐 Attempting to edit bank details to: {bank_name}, {bank_id} and {sort_code}")
         self.ant_select_option(
             EDIT_BANK_DETAILS_PAGE.BANK_NAME_DROPDOWN,
-            EDIT_BANK_DETAILS_PAGE.BANK_NAME
+            bank_name
         )
         logger.info("✅ Edit Bank details page and click Submit")
         self.fill_input(EDIT_BANK_DETAILS_PAGE.BANK_ID, bank_id)

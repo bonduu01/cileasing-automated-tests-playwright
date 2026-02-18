@@ -166,51 +166,55 @@ class BasePage:
 
     def ant_select_option(self, dropdown_locator: str, option_text: str):
         """
-        Ant Design Select handler - for custom div-based dropdowns.
-        Do NOT use for native <select> elements.
+        Stable Ant Design Select handler.
+        Handles virtualized lists and dynamic rendering.
         """
 
-        # 1. Wait for loading to finish
-        logger.info(f"📋 Waiting for dropdown to finish loading...")
-        loading_dropdown = self.page.locator(".ant-select-loading")
+        # 1️⃣ Wait for any loading spinner
+        logger.info("📋 Waiting for dropdown to finish loading...")
         try:
-            loading_dropdown.wait_for(state="hidden", timeout=15_000)
+            self.page.locator(".ant-select-loading").wait_for(
+                state="hidden", timeout=15_000
+            )
             logger.info("✅ Dropdown finished loading")
         except:
             logger.info("ℹ️ No loading state detected")
 
-        # 2. Click to open dropdown
+        # 2️⃣ Open dropdown
         logger.info(f"📋 Opening dropdown: {dropdown_locator}")
         self.page.locator(dropdown_locator).click()
 
-        # 3. Wait for dropdown panel
+        # 3️⃣ Wait for visible dropdown panel
         dropdown = self.page.locator(
             ".ant-select-dropdown:not(.ant-select-dropdown-hidden)"
         )
         dropdown.wait_for(state="visible", timeout=10_000)
         logger.info("✅ Dropdown panel visible")
 
-        # 4. Find and click option
-        option = dropdown.locator(f".ant-select-item-option[title='{option_text}']")
+        # 4️⃣ Try selecting using role (BEST METHOD)
+        try:
+            option = self.page.get_by_role("option", name=option_text)
 
-        if option.count() > 0 and option.is_visible():
+            option.wait_for(state="visible", timeout=5_000)
             option.click()
+
             logger.info(f"✅ Selected: {option_text}")
             dropdown.wait_for(state="hidden", timeout=5_000)
             return
 
-        # 5. Scroll to find option in virtual list
-        virtual_list = dropdown.locator(".rc-virtual-list-holder")
-        for attempt in range(30):
-            if option.count() > 0 and option.is_visible():
-                option.click()
-                logger.info(f"✅ Selected: {option_text} (after {attempt} scrolls)")
-                dropdown.wait_for(state="hidden", timeout=5_000)
-                return
-            virtual_list.evaluate("el => el.scrollTop += 150")
-            self.page.wait_for_timeout(100)
+        except Exception:
+            logger.info("⚠️ Role-based selection failed, trying fallback...")
 
-        raise Exception(f"Option '{option_text}' not found after scrolling")
+        # 5️⃣ Fallback: Use title attribute inside visible dropdown
+        option = dropdown.locator(
+            f".ant-select-item-option[title='{option_text}']"
+        )
+
+        option.wait_for(state="visible", timeout=5_000)
+        option.click()
+
+        logger.info(f"✅ Selected (fallback): {option_text}")
+        dropdown.wait_for(state="hidden", timeout=5_000)
 
     def upload_file(self, selector: str, file_path: str | list[str]) -> None:
         """Upload file(s) to a file input."""

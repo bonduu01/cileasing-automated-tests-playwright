@@ -29,7 +29,7 @@ class AddBankDetailsPage(BasePage):
 
         self.ant_select_option(
             ADD_BANK_DETAILS_PAGE.BANK_NAME_DROPDOWN,
-            ADD_BANK_DETAILS_PAGE.BANK_NAME
+            bank_name
         )
         logger.info(f"✅ Selected {ADD_BANK_DETAILS_PAGE.BANK_NAME} from dropdown")
         self.fill_input(ADD_BANK_DETAILS_PAGE.BANK_ID, bank_id)
