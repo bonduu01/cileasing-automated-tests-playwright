@@ -25,13 +25,13 @@ INFO     pages.base_page:base_page.py:36 🌐 URL: https://candileasing.netlify.
 INFO     pages.base_page:base_page.py:40    📊 Status: 200, OK: True
 INFO     utils.decorators:decorators.py:42    ✅ SUCCESS
 INFO     utils.decorators:decorators.py:43    📤 Return: <Response url='https://candileasing.netlify.app/' request=<Request url='https://candileasing.netlify.app/' method='GET'>>
-INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.816s
+INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.990s
 INFO     utils.decorators:decorators.py:45 ============================================================
 
 INFO     utils.decorators:decorators.py:81 📍 After: URL=https://candileasing.netlify.app/, Title=CAndILeasing
 INFO     utils.decorators:decorators.py:42    ✅ SUCCESS
 INFO     utils.decorators:decorators.py:43    📤 Return: None
-INFO     utils.decorators:decorators.py:44    ⏱️  Time: 1.122s
+INFO     utils.decorators:decorators.py:44    ⏱️  Time: 1.273s
 INFO     utils.decorators:decorators.py:45 ============================================================
 
 INFO     tests_pages.test_user_logins:test_user_logins.py:102 📋 Step 2: Enter no username and no password and click button
@@ -47,12 +47,12 @@ WARNING  pages.base_page:base_page.py:563    ⚠️ Element not found in DOM: bu
 INFO     pages.base_page:base_page.py:93    ✅ Click successful
 INFO     utils.decorators:decorators.py:42    ✅ SUCCESS
 INFO     utils.decorators:decorators.py:43    📤 Return: None
-INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.244s
+INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.190s
 INFO     utils.decorators:decorators.py:45 ============================================================
 
 INFO     utils.decorators:decorators.py:42    ✅ SUCCESS
 INFO     utils.decorators:decorators.py:43    📤 Return: None
-INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.244s
+INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.191s
 INFO     utils.decorators:decorators.py:45 ============================================================
 
 INFO     tests_pages.test_user_logins:test_user_logins.py:104 📋 Step 3: Verify username error
@@ -65,7 +65,7 @@ INFO     utils.decorators:decorators.py:31    📥 Args: ('Email cannot be blank
 INFO     pages.base_page:base_page.py:372 ⚠️ Verifying validation error: Email cannot be blank
 INFO     utils.decorators:decorators.py:42    ✅ SUCCESS
 INFO     utils.decorators:decorators.py:43    📤 Return: None
-INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.004s
+INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.005s
 INFO     utils.decorators:decorators.py:45 ============================================================
 
 INFO     utils.decorators:decorators.py:26 ============================================================
@@ -74,12 +74,12 @@ INFO     utils.decorators:decorators.py:31    📥 Args: ('Password cannot be bl
 INFO     pages.base_page:base_page.py:372 ⚠️ Verifying validation error: Password cannot be blank
 INFO     utils.decorators:decorators.py:42    ✅ SUCCESS
 INFO     utils.decorators:decorators.py:43    📤 Return: None
-INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.004s
+INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.003s
 INFO     utils.decorators:decorators.py:45 ============================================================
 
 INFO     utils.decorators:decorators.py:42    ✅ SUCCESS
 INFO     utils.decorators:decorators.py:43    📤 Return: None
-INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.009s
+INFO     utils.decorators:decorators.py:44    ⏱️  Time: 0.010s
 INFO     utils.decorators:decorators.py:45 ============================================================
 
 INFO     tests_pages.test_user_logins:test_user_logins.py:106 📋 Step 4: Verify username error visible
